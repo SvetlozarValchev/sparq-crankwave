@@ -1,0 +1,203 @@
+.root {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  color: var(--on-surface);
+  background: var(--surface);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--hair);
+}
+
+.identity {
+  min-width: 0;
+}
+
+.identity h2 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--on-surface);
+  font-size: var(--font-size-md);
+  font-weight: 650;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.identity p {
+  margin: var(--spacing-xs) 0 0;
+  color: var(--on-surface-muted);
+  font-size: var(--font-size-xs);
+}
+
+.actions,
+.presetActions,
+.sourceActions,
+.conflictActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(90px, 1fr));
+  gap: 1px;
+  background: var(--hair);
+  border-bottom: 1px solid var(--hair);
+}
+
+.metric {
+  min-width: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--surface-container);
+}
+
+.metric span,
+.metric strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metric span {
+  color: var(--on-surface-muted);
+  font-size: var(--font-size-2xs);
+  text-transform: uppercase;
+}
+
+.metric strong {
+  margin-top: 2px;
+  color: var(--on-surface);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.workspace {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.workspace > div {
+  height: 100%;
+}
+
+.sourcePane {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: var(--spacing-md);
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  padding: var(--spacing-md) var(--spacing-lg) var(--spacing-lg);
+}
+
+.presetBar {
+  display: grid;
+  grid-template-columns: minmax(220px, 420px) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.provenance {
+  overflow: hidden;
+  color: var(--on-surface-muted);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-2xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sourceBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.sourceStatus {
+  min-width: 0;
+  color: var(--on-surface-muted);
+  font-size: var(--font-size-xs);
+}
+
+.sourceStatus[data-invalid='true'] {
+  color: var(--danger);
+}
+
+.editor {
+  min-height: 0;
+}
+
+.editor textarea {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  resize: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  tab-size: 2;
+}
+
+.notice {
+  margin: 0 var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+  border-radius: var(--r-sm);
+  color: var(--on-danger-container);
+  background: color-mix(in srgb, var(--danger-container) 55%, var(--surface));
+  font-size: var(--font-size-xs);
+}
+
+.conflict {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid color-mix(in srgb, var(--warning) 40%, transparent);
+  border-radius: var(--r-sm);
+  color: var(--on-warning-container);
+  background: color-mix(in srgb, var(--warning-container) 55%, var(--surface));
+  font-size: var(--font-size-xs);
+}
+
+.gate {
+  display: grid;
+  place-content: center;
+  box-sizing: border-box;
+  height: 100%;
+  padding: var(--spacing-2xl);
+  color: var(--on-surface-muted);
+  text-align: center;
+}
+
+.gate strong {
+  color: var(--on-surface-variant);
+}
+
+@media (max-width: 900px) {
+  .summary {
+    grid-template-columns: repeat(3, minmax(90px, 1fr));
+  }
+
+  .presetBar {
+    grid-template-columns: minmax(180px, 1fr) auto;
+  }
+
+  .provenance {
+    grid-column: 1 / -1;
+  }
+}

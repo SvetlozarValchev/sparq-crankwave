@@ -1,0 +1,51 @@
+{
+  "name": "@svalchev/vehicle-engine-lab",
+  "version": "0.1.0",
+  "description": "SPARQ vehicle-engine authoring, live Engine Sim WASM audition, baking, and runtime integration",
+  "type": "module",
+  "sparq": {
+    "role": "client"
+  },
+  "engines": {
+    "sparq": ">=0.1.0 <0.2.0"
+  },
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./model": "./src/model.ts",
+    "./presets": "./src/presets.ts",
+    "./document-service": "./src/document-service.ts",
+    "./document-view": "./src/VehicleEngineLabDocument.tsx",
+    "./editor": "./src/editor.ts"
+  },
+  "files": [
+    "src/",
+    "generated/",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "author": "Svetlozar Valchev",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SvetlozarValchev/sparq-vehicle-engine-lab.git"
+  },
+  "keywords": [
+    "vehicle-engine",
+    "engine-sim",
+    "engine-sim-wasm",
+    "vehicleengine"
+  ],
+  "dependencies": {
+    "@sparq/editor-context": "workspace:^",
+    "@sparq/editor-documents": "workspace:^",
+    "@sparq/shared": "workspace:^",
+    "@sparq/ui-kit": "workspace:^",
+    "@sparq/workbench": "workspace:^"
+  },
+  "peerDependencies": {
+    "@sparq/react": "workspace:^",
+    "@sparq/workbench-host": "workspace:^"
+  }
+}
