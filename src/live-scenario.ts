@@ -4,7 +4,7 @@ export const LIVE_PHYSICS_RATE_HZ = 10_000;
 export const LIVE_SOURCE_RATE_HZ = 192_000;
 export const LIVE_BLOCK_DURATION_MS = 20;
 
-export interface LiveEngineAsset {
+export interface VehicleEngineSourceAsset {
   readonly kind: 'audio' | 'accessory-configuration';
   readonly id: string;
   readonly sha256: string;
@@ -14,7 +14,7 @@ export interface LiveEngineAsset {
 export interface LiveEngineProgram {
   readonly engineId: string;
   readonly scenarioJson: string;
-  readonly assets: readonly LiveEngineAsset[];
+  readonly assets: readonly VehicleEngineSourceAsset[];
 }
 
 type JsonRecord = Readonly<Record<string, unknown>>;
@@ -55,10 +55,14 @@ function resourcePath(hash: string): string {
   return `modules/@svalchev/vehicle-engine-lab/vendor/resources/${hash}`;
 }
 
-function collectAssets(document: JsonRecord): readonly LiveEngineAsset[] {
+export function collectVehicleEngineSourceAssets(
+  source: string
+): readonly VehicleEngineSourceAsset[] {
+  const parsed = parseEngineSource(source);
+  const document = parsed.document as JsonRecord;
   const engine = record(document.engine, 'engine');
   const presentation = record(document.presentation, 'presentation');
-  const assets: LiveEngineAsset[] = [];
+  const assets: VehicleEngineSourceAsset[] = [];
 
   for (const [index, value] of entries(
     engine.accessory_configurations,
@@ -167,6 +171,6 @@ export function createLiveEngineProgram(source: string): LiveEngineProgram {
   return Object.freeze({
     engineId: parsed.summary.id,
     scenarioJson: `${JSON.stringify(scenario, null, 2)}\n`,
-    assets: collectAssets(document),
+    assets: collectVehicleEngineSourceAssets(source),
   });
 }

@@ -5,6 +5,7 @@ import {
   isVehicleEngineProjectPath,
   isVehicleEngineRuntimePath,
   parseEngineSource,
+  vehicleEngineRuntimePath,
 } from '../src/model';
 import { ENGINE_PRESETS } from '../src/presets';
 
@@ -44,6 +45,10 @@ describe('Vehicle Engine Lab engine source model', () => {
     expect(isVehicleEngineProjectPath('vehicle-engines/fixture.engine.json')).toBe(false);
     expect(isVehicleEngineRuntimePath('vehicle-engines/fixture.vehicleengine')).toBe(true);
     expect(isVehicleEngineRuntimePath('../fixture.vehicleengine')).toBe(false);
+    expect(vehicleEngineRuntimePath('fixture-v8')).toBe(
+      'vehicle-engines/fixture-v8.vehicleengine'
+    );
+    expect(() => vehicleEngineRuntimePath('../fixture')).toThrow(/portable runtime filename/);
   });
 
   it('rejects invalid JSON and incompatible Engine Sim envelopes', () => {

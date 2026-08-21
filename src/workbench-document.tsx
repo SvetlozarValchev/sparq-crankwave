@@ -1,74 +1,118 @@
 import type { ReactNode } from '@sparq/react';
 import {
-  VehicleEngineDocumentService,
-  createVehicleEngineDocumentIdentity,
-  type VehicleEngineDocumentSnapshot,
-  type VehicleEngineRecoveryState,
-} from './document-service';
-import {
-  VehicleEngineLabDocument,
-  type VehicleEngineLabDocumentBinding,
-} from './VehicleEngineLabDocument';
-import { isVehicleEngineProjectPath, VEHICLE_ENGINE_PROJECT_SUFFIX } from './model';
-import type {
-  CloseParticipantState,
-  CloseSaveResult,
-  DocumentIdentity,
-  JsonValue,
-  RecoveryReason,
-  RecoverySnapshot,
+  createDocumentIdentity,
+  createRecoverySnapshot,
+  type CloseParticipantState,
+  type CloseSaveResult,
+  type DocumentIdentity,
+  type JsonValue,
+  type RecoveryOpenDescriptor,
+  type RecoveryReason,
+  type RecoverySnapshot,
 } from '@sparq/editor-documents';
 import type { AssetActionAsset } from '@sparq/editor-context/asset-actions';
-import type { WorkbenchDocumentPresentation, WorkbenchDocumentSession } from '@sparq/workbench';
-import {
-  KeyedDocumentWorkspaceOwner,
-  createKeyedRecoverySnapshot,
-  titleFromProjectPath,
-} from '@sparq/workbench-host/project-authoring';
+import type {
+  WorkbenchDocumentPresentation,
+  WorkbenchDocumentSession,
+} from '@sparq/workbench';
 import type {
   ProjectDocumentExtension,
   ProjectDocumentWorkspace,
 } from '@sparq/workbench-host/project-authoring';
+import {
+  VehicleEngineLabDocument,
+  type VehicleEngineLabDocumentBinding,
+} from './VehicleEngineLabDocument';
+import { VehicleEngineLabService } from './lab-service';
+import type { VehicleEngineRecoveryState } from './document-service';
+import { isVehicleEngineProjectPath } from './model';
 
 export const VEHICLE_ENGINE_LAB_EDITOR_ID = 'vehicle-engine-lab';
 const VEHICLE_ENGINE_ICON = 'car-01';
+const VEHICLE_ENGINE_LAB_RESOURCE = 'project-tool:vehicle-engine-lab';
 
-function statusOf(
-  snapshot: VehicleEngineDocumentSnapshot
-): WorkbenchDocumentPresentation['status'] {
-  if (snapshot.phase === 'loading') {
+function createVehicleEngineLabIdentity(projectId: string): DocumentIdentity {
+  return createDocumentIdentity({
+    projectId,
+    editorId: VEHICLE_ENGINE_LAB_EDITOR_ID,
+    resourceUri: VEHICLE_ENGINE_LAB_RESOURCE,
+    displayPath: 'Vehicle Engine Lab',
+  });
+}
+
+function statusOf(snapshot: ReturnType<VehicleEngineLabService['getSnapshot']>): WorkbenchDocumentPresentation['status'] {
+  if (snapshot.phase === 'opening' || snapshot.document?.phase === 'loading') {
     return 'loading';
   }
-  if (snapshot.phase === 'failed' || !snapshot.workingCopy) {
+  if (snapshot.phase === 'failed' || snapshot.document?.phase === 'failed') {
     return 'failed';
   }
-  return snapshot.workingCopy.status;
+  return snapshot.document?.workingCopy?.status ?? 'ready';
+}
+
+function isJsonRecord(value: JsonValue): value is Readonly<Record<string, JsonValue>> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function recoveryStateOf(snapshot: RecoverySnapshot | undefined): VehicleEngineRecoveryState | null {
+  if (!snapshot) {
+    return null;
+  }
+  const payload = snapshot.payload;
+  if (
+    !isJsonRecord(payload) ||
+    payload.kind !== VEHICLE_ENGINE_LAB_EDITOR_ID ||
+    !isJsonRecord(payload.state)
+  ) {
+    throw new Error('Invalid Vehicle Engine Lab recovery payload');
+  }
+  const state = payload.state as unknown as VehicleEngineRecoveryState;
+  if (
+    state.schemaVersion !== 1 ||
+    typeof state.path !== 'string' ||
+    typeof state.baselineRevision !== 'string' ||
+    typeof state.baselineSource !== 'string' ||
+    typeof state.source !== 'string'
+  ) {
+    throw new Error('Invalid Vehicle Engine Lab recovery state');
+  }
+  return state;
+}
+
+function activePathOf(viewState: JsonValue): string | null {
+  if (!isJsonRecord(viewState)) {
+    return null;
+  }
+  return typeof viewState.activePath === 'string' && isVehicleEngineProjectPath(viewState.activePath)
+    ? viewState.activePath
+    : null;
 }
 
 export class VehicleEngineWorkbenchSession implements WorkbenchDocumentSession {
-  private binding: VehicleEngineLabDocumentBinding | null = null;
+  private readonly binding: VehicleEngineLabDocumentBinding;
 
   constructor(
     readonly identity: DocumentIdentity,
-    readonly service: VehicleEngineDocumentService
-  ) {}
+    readonly service: VehicleEngineLabService
+  ) {
+    this.binding = Object.freeze({ service });
+  }
 
   readonly subscribe = (listener: () => void): (() => void) => this.service.subscribe(listener);
 
   getPresentation(): WorkbenchDocumentPresentation {
     const snapshot = this.service.getSnapshot();
-    const path = snapshot.workingCopy?.identity.displayPath ?? this.identity.displayPath;
     return {
-      title: titleFromProjectPath(path, VEHICLE_ENGINE_PROJECT_SUFFIX),
+      title: 'Vehicle Engine Lab',
       icon: VEHICLE_ENGINE_ICON,
       status: statusOf(snapshot),
-      dirty: snapshot.workingCopy?.dirty ?? false,
-      readOnly: snapshot.workingCopy?.readOnly ?? true,
+      dirty: snapshot.document?.workingCopy?.dirty ?? false,
+      readOnly: snapshot.document?.workingCopy?.readOnly ?? false,
     };
   }
 
   getCloseState(): CloseParticipantState {
-    const working = this.service.getSnapshot().workingCopy;
+    const working = this.service.getSnapshot().document?.workingCopy;
     if (!working) {
       return 'clean';
     }
@@ -85,7 +129,7 @@ export class VehicleEngineWorkbenchSession implements WorkbenchDocumentSession {
   }
 
   async saveForClose(): Promise<CloseSaveResult> {
-    const working = this.service.getSnapshot().workingCopy;
+    const working = this.service.getSnapshot().document?.workingCopy;
     if (!working) {
       return { ok: true };
     }
@@ -118,7 +162,7 @@ export class VehicleEngineWorkbenchSession implements WorkbenchDocumentSession {
   }
 
   captureRecovery(identity: DocumentIdentity, reason: RecoveryReason): RecoverySnapshot | null {
-    const working = this.service.getSnapshot().workingCopy;
+    const working = this.service.getSnapshot().document?.workingCopy;
     if (
       !working ||
       (!working.dirty &&
@@ -127,23 +171,25 @@ export class VehicleEngineWorkbenchSession implements WorkbenchDocumentSession {
     ) {
       return null;
     }
-    return createKeyedRecoverySnapshot(
-      VEHICLE_ENGINE_LAB_EDITOR_ID,
+    const state = this.service.captureRecoveryState();
+    if (!state) {
+      return null;
+    }
+    return createRecoverySnapshot({
       identity,
       reason,
-      working.baselineRevision,
-      this.service.captureRecoveryState()
-    );
+      baselineRevision: state.baselineRevision,
+      payload: { kind: VEHICLE_ENGINE_LAB_EDITOR_ID, state } as unknown as JsonValue,
+    });
   }
 
   getRecoveryViewState(): JsonValue {
-    return {};
+    return { activePath: this.service.getSnapshot().activePath };
   }
 
   setRecoveryViewState(_viewState: JsonValue): void {}
 
   render(_itemId: string): ReactNode {
-    this.binding ??= { service: this.service };
     return <VehicleEngineLabDocument binding={this.binding} />;
   }
 
@@ -152,38 +198,21 @@ export class VehicleEngineWorkbenchSession implements WorkbenchDocumentSession {
   }
 }
 
+/** Owns one lab session per project; project files are selected inside it. */
 export class VehicleEngineDocumentWorkspaceExtension implements ProjectDocumentExtension {
-  private readonly owner: KeyedDocumentWorkspaceOwner<
-    VehicleEngineDocumentService,
-    VehicleEngineWorkbenchSession,
-    VehicleEngineRecoveryState
-  >;
+  private readonly identity: DocumentIdentity;
+  private readonly unregisterRecoveryAdapter: () => void;
+  private disposed = false;
 
   constructor(
     private readonly projectId: string,
-    workspace: ProjectDocumentWorkspace
+    private readonly workspace: ProjectDocumentWorkspace
   ) {
-    this.owner = new KeyedDocumentWorkspaceOwner({
-      projectId,
-      workspace,
+    this.identity = createVehicleEngineLabIdentity(projectId);
+    this.unregisterRecoveryAdapter = workspace.registerRecoveryAdapter({
       editorId: VEHICLE_ENGINE_LAB_EDITOR_ID,
-      recoveryLabel: 'Vehicle Engine Lab',
-      documentLabel: 'Vehicle Engine',
-      createPersistentIdentity: (path) => createVehicleEngineDocumentIdentity(projectId, path),
-      createService: (identity) => new VehicleEngineDocumentService(identity),
-      createSession: (identity, service) => new VehicleEngineWorkbenchSession(identity, service),
-      isSession: (session): session is VehicleEngineWorkbenchSession =>
-        session instanceof VehicleEngineWorkbenchSession,
-      restoreService: async (service, _descriptor, recovery) => {
-        if (recovery) {
-          await service.restoreRecoveryState(recovery);
-        } else {
-          await service.open();
-        }
-        if (service.getSnapshot().phase !== 'ready') {
-          throw service.getSnapshot().error ?? new Error('Vehicle engine recovery failed');
-        }
-      },
+      label: 'Vehicle Engine Lab',
+      restore: (descriptor, snapshot) => this.restore(descriptor, snapshot),
     });
   }
 
@@ -199,14 +228,82 @@ export class VehicleEngineDocumentWorkspaceExtension implements ProjectDocumentE
     if (!asset.path) {
       throw new Error('A Vehicle Engine asset must have a project-relative path');
     }
-    const identity = createVehicleEngineDocumentIdentity(this.projectId, asset.path);
-    const opened = this.owner.open(identity);
+    this.assertActive();
+    const opened = this.openLabSession();
+    void opened.session.service.requestOpen(asset.path);
+  }
+
+  openWorkbench(): void {
+    const opened = this.openLabSession();
     if (opened.created) {
-      void opened.session.service.open();
+      void opened.session.service.refreshProjectPaths();
     }
   }
 
   dispose(): void {
-    this.owner.dispose();
+    if (this.disposed) {
+      return;
+    }
+    this.disposed = true;
+    try {
+      this.workspace.revokeEditorSessions(VEHICLE_ENGINE_LAB_EDITOR_ID);
+    } finally {
+      this.unregisterRecoveryAdapter();
+    }
+  }
+
+  private async restore(
+    descriptor: RecoveryOpenDescriptor,
+    snapshot: RecoverySnapshot | undefined
+  ): Promise<string> {
+    this.assertActive();
+    if (
+      descriptor.identity.projectId !== this.identity.projectId ||
+      descriptor.identity.editorId !== this.identity.editorId ||
+      descriptor.identity.resourceUri !== this.identity.resourceUri
+    ) {
+      throw new Error('Vehicle Engine Lab cannot restore a foreign document identity');
+    }
+    const service = new VehicleEngineLabService(this.projectId);
+    try {
+      const recovery = recoveryStateOf(snapshot);
+      if (recovery) {
+        await service.restoreRecoveryState(recovery);
+      } else {
+        const activePath = activePathOf(descriptor.viewState);
+        if (activePath) {
+          await service.requestOpen(activePath);
+        } else {
+          await service.refreshProjectPaths();
+        }
+      }
+      const opened = this.workspace.openRecoveredSession(this.identity, (identity) =>
+        new VehicleEngineWorkbenchSession(identity, service)
+      );
+      if (!opened.created) {
+        service.dispose();
+      }
+      return opened.itemId;
+    } catch (error) {
+      service.dispose();
+      throw error;
+    }
+  }
+
+  private assertActive(): void {
+    if (this.disposed) {
+      throw new Error('Vehicle Engine Lab document extension is disposed');
+    }
+  }
+
+  private openLabSession(): {
+    readonly itemId: string;
+    readonly session: VehicleEngineWorkbenchSession;
+    readonly created: boolean;
+  } {
+    this.assertActive();
+    return this.workspace.openSession(this.identity, (identity) =>
+      new VehicleEngineWorkbenchSession(identity, new VehicleEngineLabService(this.projectId))
+    );
   }
 }

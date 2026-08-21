@@ -41,6 +41,11 @@ Run `sparq-cli package install`, then activate the package from the project's
 `sparq.editor` entry by calling `activateVehicleEngineLab()` from
 `@svalchev/vehicle-engine-lab/editor` before the workbench mounts.
 
+Open the lab from **Window → Project Tools → Vehicle Engine Lab**. The lab owns
+one editor tab per project; New, Open, Save As, and project engine selection all
+happen inside that tab. Opening a `*.vehicle-engine.json` file from Content
+focuses the same tab and loads the selected engine there.
+
 The package declares host-provided SPARQ APIs through `workspace:^` so SPM uses
 the APIs supplied by the active SPARQ installation.
 

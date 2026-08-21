@@ -139,6 +139,13 @@ export function isVehicleEngineRuntimePath(path: string): boolean {
   );
 }
 
+export function vehicleEngineRuntimePath(engineId: string): string {
+  if (!/^[a-z0-9](?:[a-z0-9._-]{0,126}[a-z0-9])?$/.test(engineId)) {
+    throw new Error(`Engine ID '${engineId}' cannot be used as a portable runtime filename`);
+  }
+  return `${VEHICLE_ENGINE_PROJECT_DIRECTORY}/${engineId}${VEHICLE_ENGINE_RUNTIME_SUFFIX}`;
+}
+
 export function vehicleEngineDocumentNameFromPath(path: string): string {
   const filename = path.slice(path.lastIndexOf('/') + 1);
   return filename.endsWith(VEHICLE_ENGINE_PROJECT_SUFFIX)

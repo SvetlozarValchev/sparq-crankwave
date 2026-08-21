@@ -48,6 +48,12 @@ export function activateVehicleEngineLab(): VehicleEngineLabActivation {
     leases.push(
       registerProjectDocumentExtension({
         id: VEHICLE_ENGINE_LAB_EDITOR_ID,
+        launcher: {
+          commandId: 'svalchev.vehicle-engine-lab.open',
+          label: 'Vehicle Engine Lab',
+          category: 'Window',
+          icon: 'car-01',
+        },
         create: ({ projectId, workspace }) =>
           new VehicleEngineDocumentWorkspaceExtension(projectId, workspace),
       })
