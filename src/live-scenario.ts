@@ -1,0 +1,172 @@
+import { parseEngineSource } from './model';
+
+export const LIVE_PHYSICS_RATE_HZ = 10_000;
+export const LIVE_SOURCE_RATE_HZ = 192_000;
+export const LIVE_BLOCK_DURATION_MS = 20;
+
+export interface LiveEngineAsset {
+  readonly kind: 'audio' | 'accessory-configuration';
+  readonly id: string;
+  readonly sha256: string;
+  readonly packagePath: string;
+}
+
+export interface LiveEngineProgram {
+  readonly engineId: string;
+  readonly scenarioJson: string;
+  readonly assets: readonly LiveEngineAsset[];
+}
+
+type JsonRecord = Readonly<Record<string, unknown>>;
+
+function record(value: unknown, field: string): JsonRecord {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`${field} must be a JSON object`);
+  }
+  return value as JsonRecord;
+}
+
+function nonemptyText(value: unknown, field: string): string {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new Error(`${field} must be a non-empty string`);
+  }
+  return value;
+}
+
+function contentHash(value: unknown, field: string): string {
+  const hash = nonemptyText(value, field);
+  if (!/^[0-9a-f]{64}$/.test(hash)) {
+    throw new Error(`${field} must be a lowercase SHA-256 digest`);
+  }
+  return hash;
+}
+
+function entries(value: unknown, field: string): readonly unknown[] {
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    throw new Error(`${field} must be an array`);
+  }
+  return value;
+}
+
+function resourcePath(hash: string): string {
+  return `modules/@svalchev/vehicle-engine-lab/vendor/resources/${hash}`;
+}
+
+function collectAssets(document: JsonRecord): readonly LiveEngineAsset[] {
+  const engine = record(document.engine, 'engine');
+  const presentation = record(document.presentation, 'presentation');
+  const assets: LiveEngineAsset[] = [];
+
+  for (const [index, value] of entries(
+    engine.accessory_configurations,
+    'engine.accessory_configurations'
+  ).entries()) {
+    const asset = record(value, `engine.accessory_configurations[${index}]`);
+    const id = nonemptyText(asset.id, `engine.accessory_configurations[${index}].id`);
+    const sha256 = contentHash(
+      asset.sha256,
+      `engine.accessory_configurations[${index}].sha256`
+    );
+    assets.push({ kind: 'accessory-configuration', id, sha256, packagePath: resourcePath(sha256) });
+  }
+
+  for (const [index, value] of entries(presentation.assets, 'presentation.assets').entries()) {
+    const asset = record(value, `presentation.assets[${index}]`);
+    if (asset.kind !== 'impulse_response') {
+      throw new Error(`presentation.assets[${index}].kind '${String(asset.kind)}' is not supported live`);
+    }
+    const id = nonemptyText(asset.id, `presentation.assets[${index}].id`);
+    const sha256 = contentHash(asset.sha256, `presentation.assets[${index}].sha256`);
+    assets.push({ kind: 'audio', id, sha256, packagePath: resourcePath(sha256) });
+  }
+  return Object.freeze(assets.map((asset) => Object.freeze(asset)));
+}
+
+function outputBuses(document: JsonRecord): readonly string[] {
+  const presentation = record(document.presentation, 'presentation');
+  const buses = entries(presentation.buses, 'presentation.buses')
+    .map((value, index) => record(value, `presentation.buses[${index}]`))
+    .filter((bus) => bus.publish === true)
+    .map((bus, index) => nonemptyText(bus.id, `published presentation.buses[${index}].id`));
+  if (buses.length === 0) {
+    throw new Error('presentation must publish at least one audio bus');
+  }
+  return buses;
+}
+
+export function createLiveEngineProgram(source: string): LiveEngineProgram {
+  const parsed = parseEngineSource(source);
+  const document = parsed.document as JsonRecord;
+  const engine = record(document.engine, 'engine');
+  const fuel = nonemptyText(engine.default_fuel, 'engine.default_fuel');
+  const scenario = {
+    schema: 'engine-sim-offline/scenario',
+    id: `${parsed.summary.id}-vehicle-engine-lab-live`,
+    engine: parsed.summary.id,
+    fuel,
+    ambient: {
+      pressure: { value: 101325, unit: 'Pa' },
+      temperature: { value: 298.15, unit: 'K' },
+      relative_humidity_01: 0,
+    },
+    initial_thermal_state: {
+      gas_temperature: { value: 298.15, unit: 'K' },
+      wall_temperature: { value: 363.15, unit: 'K' },
+      coolant_temperature: { value: 363.15, unit: 'K' },
+      oil_temperature: { value: 363.15, unit: 'K' },
+    },
+    crankcase: {
+      pressure: { value: 101325, unit: 'Pa' },
+      temperature: { value: 298.15, unit: 'K' },
+    },
+    initial_state: {
+      engine_speed: { value: 650, unit: 'rpm' },
+      crank_angle: { value: 0.7853981633975, unit: 'rad' },
+      ignition_enabled: true,
+      fuel_enabled: true,
+      starter_enabled: false,
+      dyno_enabled: false,
+      limiter_enabled: true,
+    },
+    preparation: {
+      type: 'fixed_horizon',
+      preparation_duration: { value: 1, unit: 's' },
+      trailing_complete_cycle_count: 4,
+    },
+    mode: {
+      type: 'free_engine',
+      throttle_01: {
+        interpolation: 'right_continuous_hold',
+        points: [{ time: { value: 0, unit: 's' }, value: 0.1 }],
+      },
+    },
+    events: [],
+    rates: {
+      physics: { numerator: String(LIVE_PHYSICS_RATE_HZ), denominator: '1', unit: 'Hz' },
+      capture: { numerator: String(LIVE_PHYSICS_RATE_HZ), denominator: '1', unit: 'Hz' },
+      source_processing: { numerator: String(LIVE_SOURCE_RATE_HZ), denominator: '1', unit: 'Hz' },
+      acoustics: { numerator: String(LIVE_SOURCE_RATE_HZ), denominator: '1', unit: 'Hz' },
+      delivery: { numerator: String(LIVE_SOURCE_RATE_HZ), denominator: '1', unit: 'Hz' },
+    },
+    quality: {
+      id: 'listening',
+      process_block_capacity_frames: (LIVE_SOURCE_RATE_HZ * LIVE_BLOCK_DURATION_MS) / 1000,
+      event_queue_capacity: 3800,
+      telemetry_capacity_frames: 1,
+    },
+    total_duration: { value: 7, unit: 's' },
+    audible_start: { value: 1, unit: 's' },
+    audible_duration: { value: 6, unit: 's' },
+    public_seed: '12648430',
+    output: { buses: outputBuses(document), telemetry_channels: [] },
+  };
+
+  return Object.freeze({
+    engineId: parsed.summary.id,
+    scenarioJson: `${JSON.stringify(scenario, null, 2)}\n`,
+    assets: collectAssets(document),
+  });
+}

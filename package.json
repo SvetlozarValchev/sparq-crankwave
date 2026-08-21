@@ -21,6 +21,7 @@
   "files": [
     "src/",
     "generated/",
+    "vendor/",
     "README.md",
     "LICENSE",
     "THIRD_PARTY_NOTICES.md"

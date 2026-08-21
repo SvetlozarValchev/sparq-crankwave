@@ -3,6 +3,7 @@ import { Button, Modal, Select, Tabs, Textarea, notify } from '@sparq/ui-kit';
 import type { VehicleEngineDocumentService } from './document-service';
 import { formatEngineSource } from './model';
 import { ENGINE_PRESETS, getEnginePreset } from './presets';
+import { VehicleEngineLiveBench } from './VehicleEngineLiveBench';
 import styles from './VehicleEngineLabDocument.module.css';
 
 export interface VehicleEngineLabDocumentBinding {
@@ -221,12 +222,12 @@ export function VehicleEngineLabDocument({ binding }: VehicleEngineLabDocumentPr
             {
               value: 'live',
               label: 'Dyno + Live',
-              disabled: true,
+              disabled: !working,
               content: (
-                <div className={styles.gate}>
-                  <strong>Not available yet</strong>
-                  <span>Torque, power, free-rev, gearing, and live audio</span>
-                </div>
+                <VehicleEngineLiveBench
+                  source={source}
+                  sourceValid={snapshot.diagnostic === null && snapshot.phase === 'ready'}
+                />
               ),
             },
             {
