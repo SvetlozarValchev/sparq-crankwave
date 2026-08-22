@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="286" height="28" viewBox="0 0 286 28" role="img" aria-label="SPM package: @svalchev/crankwave">
+  <title>SPM package: @svalchev/crankwave</title>
+  <rect x="0.5" y="0.5" width="285" height="27" rx="6.5" fill="#111318" stroke="#30343d"/>
+  <path d="M18.11 14.15l4.31-2.06c.22-.11.33-.36.26-.6a.55.55 0 0 0-.49-.35l-5.12 1.07a.23.23 0 0 1-.27-.21l-.54-7.47a.54.54 0 0 0-1.07-.03l-.68 7.3-5.1-2.09a.56.56 0 0 0-.68.22.55.55 0 0 0 .16.76l4.12 2.77-4.47 1.92a.54.54 0 0 0-.24.79.52.52 0 0 0 .46.26l5.29-.83a.44.44 0 0 1 .5.4l.64 7.15a.49.49 0 0 0 .98-.01l.44-6.89a.44.44 0 0 1 .62-.35l4.22 1.83a.53.53 0 0 0 .72-.48.53.53 0 0 0-.24-.45l-4.12-2.74Z" fill="#00D970"/>
+  <text x="30" y="18" fill="#00D970" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="12" font-weight="700" letter-spacing=".6">SPM</text>
+  <path d="M64.5 5v18" stroke="#30343d"/>
+  <text x="76" y="18" fill="#F2F4F7" font-family="ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace" font-size="12">@svalchev/crankwave</text>
+</svg>
