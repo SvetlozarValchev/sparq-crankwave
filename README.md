@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <a href="https://packages.playsparq.com/package/@svalchev/crankwave">
+  <a href="https://packages.playsparq.com/package/@svalchev/crankwave" target="_blank" rel="noopener noreferrer">
     <img src="docs/assets/spm-package.svg" alt="SPM package: @svalchev/crankwave" height="28">
   </a>
 </p>
