@@ -6,9 +6,9 @@ import {
   type VehicleEngineRecoveryState,
 } from './document-service';
 import {
-  VEHICLE_ENGINE_PROJECT_DIRECTORY,
-  VEHICLE_ENGINE_PROJECT_SUFFIX,
-  isVehicleEngineProjectPath,
+  CRANKWAVE_SOURCE_DIRECTORY,
+  CRANKWAVE_SOURCE_SUFFIX,
+  isCrankwaveSourcePath,
   parseEngineSource,
 } from './model';
 
@@ -38,15 +38,15 @@ function isMissingDirectoryError(error: unknown): boolean {
   return message.includes('enoent') || message.includes('not found') || message.includes('no such file');
 }
 
-export function vehicleEngineProjectPathForName(name: string): string {
+export function crankwaveSourcePathForName(name: string): string {
   let stem = name.trim();
-  if (stem.endsWith(VEHICLE_ENGINE_PROJECT_SUFFIX)) {
-    stem = stem.slice(0, -VEHICLE_ENGINE_PROJECT_SUFFIX.length);
+  if (stem.endsWith(CRANKWAVE_SOURCE_SUFFIX)) {
+    stem = stem.slice(0, -CRANKWAVE_SOURCE_SUFFIX.length);
   }
   if (!/^[a-z0-9](?:[a-z0-9._-]{0,126}[a-z0-9])?$/i.test(stem)) {
     throw new Error('Engine file name must use letters, numbers, dots, dashes, or underscores');
   }
-  return `${VEHICLE_ENGINE_PROJECT_DIRECTORY}/${stem}${VEHICLE_ENGINE_PROJECT_SUFFIX}`;
+  return `${CRANKWAVE_SOURCE_DIRECTORY}/${stem}${CRANKWAVE_SOURCE_SUFFIX}`;
 }
 
 export function createVehicleEngineProjectLibrary(): VehicleEngineProjectLibrary {
@@ -57,11 +57,11 @@ export function createVehicleEngineProjectLibrary(): VehicleEngineProjectLibrary
   return {
     async list() {
       try {
-        const names = await (await getFs()).readdir(VEHICLE_ENGINE_PROJECT_DIRECTORY);
+        const names = await (await getFs()).readdir(CRANKWAVE_SOURCE_DIRECTORY);
         return Object.freeze(
           names
-            .map((name) => `${VEHICLE_ENGINE_PROJECT_DIRECTORY}/${name}`)
-            .filter(isVehicleEngineProjectPath)
+            .map((name) => `${CRANKWAVE_SOURCE_DIRECTORY}/${name}`)
+            .filter(isCrankwaveSourcePath)
             .sort((left, right) => left.localeCompare(right))
         );
       } catch (error) {
@@ -72,12 +72,12 @@ export function createVehicleEngineProjectLibrary(): VehicleEngineProjectLibrary
       }
     },
     async createExclusive(path, source) {
-      if (!isVehicleEngineProjectPath(path)) {
+      if (!isCrankwaveSourcePath(path)) {
         throw new Error(`Invalid vehicle engine project path '${path}'`);
       }
       parseEngineSource(source);
       const fs = await getFs();
-      await fs.mkdirRecursive(VEHICLE_ENGINE_PROJECT_DIRECTORY, true);
+      await fs.mkdirRecursive(CRANKWAVE_SOURCE_DIRECTORY, true);
       await fs.writeFileExclusive(path, source);
     },
     async notifyFileChanged(path) {
@@ -87,7 +87,7 @@ export function createVehicleEngineProjectLibrary(): VehicleEngineProjectLibrary
 }
 
 /**
- * Project-scoped authority for the singleton Vehicle Engine Lab surface.
+ * Project-scoped authority for the singleton Crankwave surface.
  * Engine files are working state inside the lab; they never become workbench
  * tab identities themselves.
  */
@@ -182,12 +182,12 @@ export class VehicleEngineLabService {
   async createFromSource(name: string, source: string): Promise<string> {
     this.assertActive();
     parseEngineSource(source);
-    const path = vehicleEngineProjectPathForName(name);
+    const path = crankwaveSourcePathForName(name);
     await this.library.createExclusive(path, source);
     try {
       await this.library.notifyFileChanged?.(path);
     } catch (error) {
-      console.warn('[vehicle-engine-lab] created engine but could not broadcast its file change', {
+      console.warn('[crankwave] created engine but could not broadcast its file change', {
         path,
         error,
       });
@@ -290,7 +290,7 @@ export class VehicleEngineLabService {
   private requireDocumentService(): VehicleEngineDocumentService {
     this.assertActive();
     if (!this.documentService) {
-      throw new Error('Open an engine inside Vehicle Engine Lab first');
+      throw new Error('Open an engine inside Crankwave first');
     }
     return this.documentService;
   }
@@ -305,14 +305,14 @@ export class VehicleEngineLabService {
 
   private assertPath(path: string): void {
     this.assertActive();
-    if (!isVehicleEngineProjectPath(path)) {
+    if (!isCrankwaveSourcePath(path)) {
       throw new Error(`Invalid vehicle engine project path '${path}'`);
     }
   }
 
   private assertActive(): void {
     if (this.disposed) {
-      throw new Error('Vehicle Engine Lab service is disposed');
+      throw new Error('Crankwave service is disposed');
     }
   }
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'engine:test';
 import { sha256Hex } from '../src/sha256';
 
-describe('Vehicle Engine Lab SHA-256 fallback', () => {
+describe('Crankwave SHA-256 fallback', () => {
   it('matches the standard empty and abc vectors', () => {
     expect(sha256Hex(new Uint8Array())).toBe(
       'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'

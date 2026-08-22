@@ -200,6 +200,6 @@ export const AUTHORING_CAPABILITY_EXCEPTIONS: readonly AuthoringCapability[] =
     Object.freeze({
       sourcePath: 'rig.dyno_defaults',
       state: 'lab-excluded' as const,
-      reason: 'Vehicle Engine Lab uses its live geared vehicle bench and does not author dyno defaults.',
+      reason: 'Crankwave uses its live geared vehicle bench and does not author dyno defaults.',
     }),
   ]);

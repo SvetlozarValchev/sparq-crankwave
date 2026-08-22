@@ -4,7 +4,7 @@ import type { VehicleEngineDocument } from './authoring-contract';
 import { VEHICLE_ENGINE_SECTIONS, type VehicleEngineSectionId } from './authoring-semantics';
 import { VehicleEngineBakeController } from './bake-controller';
 import type { VehicleEngineLabService } from './lab-service';
-import { parseEngineSource, vehicleEngineDocumentNameFromPath } from './model';
+import { parseEngineSource, crankwaveDocumentNameFromPath } from './model';
 import { ENGINE_PRESETS, getEnginePreset } from './presets';
 import { VehicleEngineLiveBench } from './VehicleEngineLiveBench';
 import { VehicleEngineSemanticEditor } from './VehicleEngineSemanticEditor';
@@ -102,9 +102,9 @@ export function VehicleEngineLabDocument({ binding }: VehicleEngineLabDocumentPr
 
   return <div className={styles.root}>
     <header className={styles.compactHeader}>
-      <div className={styles.identity}><h2>Vehicle Engine Lab</h2><p>{snapshot?.summary?.displayName ?? 'Create or open a vehicle engine'}</p></div>
+      <div className={styles.identity}><h2>Crankwave</h2><p>{snapshot?.summary?.displayName ?? 'Create or open a vehicle engine'}</p></div>
       <div className={styles.headerActions}>
-        <Select ariaLabel="Project vehicle engine" size="sm" searchable value={labSnapshot.activePath ?? ''} options={labSnapshot.projectPaths.map((path) => ({ value: path, label: vehicleEngineDocumentNameFromPath(path) }))} onChange={open} />
+        <Select ariaLabel="Project vehicle engine" size="sm" searchable value={labSnapshot.activePath ?? ''} options={labSnapshot.projectPaths.map((path) => ({ value: path, label: crankwaveDocumentNameFromPath(path) }))} onChange={open} />
         <Button size="sm" fill="outline" disabled={busy} onClick={() => showCreateDialog('new')}>New</Button>
         <Button size="sm" fill="outline" disabled={!working || busy} onClick={() => showCreateDialog('save-as')}>Save as</Button>
         <Button size="sm" fill="outline" loading={working?.status === 'saving'} disabled={busy || !working?.dirty || !sourceReady || conflict} onClick={save}>Save</Button>

@@ -1,22 +1,22 @@
-import createEngineSimBakerModule from '../vendor/engine-sim-wasm/engine-sim-offline-baker';
+import createCrankwaveBakerModule from '../vendor/crankwave/crankwave-baker';
 import {
-  EngineSimVehicleEngineBaker,
-  type BakedVehicleEngine,
-} from '../vendor/engine-sim-wasm/runtime/c-api-baker';
-import { loadVehicleEnginePackage } from '../vendor/engine-sim-wasm/runtime/vehicleengine-package';
+  CrankwaveBaker,
+  type BakedCrankwave,
+} from '../vendor/crankwave/runtime/c-api-baker';
+import { loadCrankwavePackage } from '../vendor/crankwave/runtime/crankwave-package';
 import type {
   BakeInitializeMessage,
   BakeWorkerInboundMessage,
   BakeWorkerOutboundMessage,
 } from './bake-protocol';
-import { ENGINE_SIM_WASM_RELEASE_IDENTITY } from './resources';
+import { CRANKWAVE_RELEASE_IDENTITY } from './resources';
 import { SHA256_CRYPTO, sha256, sha256Hex } from './sha256';
 
 let initialized = false;
 const TRANSFER_CHUNK_BYTES = 1024 * 1024;
 interface PendingCarrierTransfer {
   readonly bytes: Uint8Array;
-  readonly metadata: import('./bake-protocol').BakedVehicleEngineMetadata;
+  readonly metadata: import('./bake-protocol').BakedCrankwaveMetadata;
   readonly chunkCount: number;
   nextChunkIndex: number;
 }
@@ -54,15 +54,15 @@ async function initialize(message: BakeInitializeMessage): Promise<void> {
   post({
     type: 'progress',
     phase: 'loading',
-    status: 'Instantiating the full-fidelity Engine Sim WASM baker…',
+    status: 'Instantiating the full-fidelity Crankwave WASM baker…',
   });
-  const module = await createEngineSimBakerModule({
+  const module = await createCrankwaveBakerModule({
     wasmBinary: wasmBytes,
     noInitialRun: true,
     locateFile: (path) => path,
   });
-  const baker = new EngineSimVehicleEngineBaker(module);
-  let baked: BakedVehicleEngine;
+  const baker = new CrankwaveBaker(module);
+  let baked: BakedCrankwave;
   try {
     post({
       type: 'progress',
@@ -78,7 +78,7 @@ async function initialize(message: BakeInitializeMessage): Promise<void> {
       })),
       sharedStarterRuntimeJson: message.sharedStarterRuntimeJson,
       sharedStarterAudio: message.sharedStarterAudio,
-      releaseIdentity: ENGINE_SIM_WASM_RELEASE_IDENTITY,
+      releaseIdentity: CRANKWAVE_RELEASE_IDENTITY,
       wasmModuleSha256: sha256(wasmBytes),
       assetCatalogSha256: sha256(catalogBytes),
     });
@@ -91,7 +91,7 @@ async function initialize(message: BakeInitializeMessage): Promise<void> {
     phase: 'verifying',
     status: 'Verifying every carrier entry and runtime descriptor in memory…',
   });
-  const verified = await loadVehicleEnginePackage(baked.bytes, { crypto: SHA256_CRYPTO });
+  const verified = await loadCrankwavePackage(baked.bytes, { crypto: SHA256_CRYPTO });
   if (verified.descriptor.engineId !== baked.engineId) {
     throw new Error('Baked carrier engine identity does not match its verified descriptor');
   }

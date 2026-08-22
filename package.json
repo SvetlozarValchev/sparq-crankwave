@@ -1,7 +1,7 @@
 {
-  "name": "@svalchev/vehicle-engine-lab",
+  "name": "@svalchev/crankwave",
   "version": "0.1.0",
-  "description": "SPARQ vehicle-engine authoring, live Engine Sim WASM audition, baking, and runtime integration",
+  "description": "Crankwave vehicle-engine authoring, live audition, baking, and runtime integration for SPARQ",
   "type": "module",
   "sparq": {
     "role": "client"
@@ -34,13 +34,14 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SvetlozarValchev/sparq-vehicle-engine-lab.git"
+    "url": "git+https://github.com/SvetlozarValchev/sparq-crankwave.git"
   },
+  "homepage": "https://playsparq.com",
   "keywords": [
     "vehicle-engine",
     "engine-sim",
-    "engine-sim-wasm",
-    "vehicleengine"
+    "crankwave",
+    "vehicle-audio"
   ],
   "dependencies": {
     "@sparq/editor-context": "workspace:^",

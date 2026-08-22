@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'engine:test';
 import {
+  collectVehicleEngineSourceAssets,
   createLiveEngineProgram,
   LIVE_BLOCK_DURATION_MS,
   LIVE_PHYSICS_RATE_HZ,
@@ -7,7 +8,7 @@ import {
 } from '../src/live-scenario';
 import { ENGINE_PRESETS } from '../src/presets';
 
-describe('Vehicle Engine Lab live scenario', () => {
+describe('Crankwave live scenario', () => {
   it('creates a 10 kHz open-ended bench source with fixed 192 kHz delivery', () => {
     const preset = ENGINE_PRESETS[0]!;
     const program = createLiveEngineProgram(preset.sourceJson);
@@ -19,8 +20,8 @@ describe('Vehicle Engine Lab live scenario', () => {
       quality: { process_block_capacity_frames: number };
     };
 
-    expect(program.engineId).toBe(preset.id);
-    expect(scenario.engine).toBe(preset.id);
+    expect(program.engineId).toBe(preset.engineId);
+    expect(scenario.engine).toBe(preset.engineId);
     expect(scenario.fuel).toBe('regular-unleaded-gasoline');
     expect(scenario.mode.type).toBe('free_vehicle');
     expect(program.serviceBrakeAvailable).toBe(false);
@@ -37,11 +38,11 @@ describe('Vehicle Engine Lab live scenario', () => {
 
   it('maps every preset dependency to a content-addressed vendored payload', () => {
     for (const preset of ENGINE_PRESETS) {
-      const program = createLiveEngineProgram(preset.sourceJson);
-      expect(program.assets.length).toBe(preset.resourceDependencies.length);
-      for (const asset of program.assets) {
+      const assets = collectVehicleEngineSourceAssets(preset.sourceJson);
+      expect(assets.length).toBe(preset.resourceDependencies.length);
+      for (const asset of assets) {
         expect(asset.packagePath).toBe(
-          `modules/@svalchev/vehicle-engine-lab/vendor/resources/${asset.sha256}`
+          `modules/@svalchev/crankwave/vendor/resources/${asset.sha256}`
         );
       }
     }

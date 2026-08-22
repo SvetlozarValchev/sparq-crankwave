@@ -123,8 +123,8 @@ export function createLiveEngineProgram(source: string): LiveEngineProgram {
   const serviceBrakeAvailable =
     typeof brakeCapacityValue === 'number' && brakeCapacityValue > 0;
   const scenario = {
-    schema: 'engine-sim-offline/scenario',
-    id: `${parsed.summary.id}-vehicle-engine-lab-live`,
+    schema: 'crankwave/scenario',
+    id: `${parsed.summary.id}-crankwave-live`,
     engine: parsed.summary.id,
     fuel,
     ambient: {

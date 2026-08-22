@@ -25,18 +25,18 @@ import {
 } from './VehicleEngineLabDocument';
 import { VehicleEngineLabService } from './lab-service';
 import type { VehicleEngineRecoveryState } from './document-service';
-import { isVehicleEngineProjectPath } from './model';
+import { isCrankwaveSourcePath } from './model';
 
-export const VEHICLE_ENGINE_LAB_EDITOR_ID = 'vehicle-engine-lab';
+export const CRANKWAVE_EDITOR_ID = 'crankwave';
 const VEHICLE_ENGINE_ICON = 'car-01';
-const VEHICLE_ENGINE_LAB_RESOURCE = 'project-tool:vehicle-engine-lab';
+const CRANKWAVE_RESOURCE = 'project-tool:crankwave';
 
 function createVehicleEngineLabIdentity(projectId: string): DocumentIdentity {
   return createDocumentIdentity({
     projectId,
-    editorId: VEHICLE_ENGINE_LAB_EDITOR_ID,
-    resourceUri: VEHICLE_ENGINE_LAB_RESOURCE,
-    displayPath: 'Vehicle Engine Lab',
+    editorId: CRANKWAVE_EDITOR_ID,
+    resourceUri: CRANKWAVE_RESOURCE,
+    displayPath: 'Crankwave',
   });
 }
 
@@ -61,10 +61,10 @@ function recoveryStateOf(snapshot: RecoverySnapshot | undefined): VehicleEngineR
   const payload = snapshot.payload;
   if (
     !isJsonRecord(payload) ||
-    payload.kind !== VEHICLE_ENGINE_LAB_EDITOR_ID ||
+    payload.kind !== CRANKWAVE_EDITOR_ID ||
     !isJsonRecord(payload.state)
   ) {
-    throw new Error('Invalid Vehicle Engine Lab recovery payload');
+    throw new Error('Invalid Crankwave recovery payload');
   }
   const state = payload.state as unknown as VehicleEngineRecoveryState;
   if (
@@ -74,7 +74,7 @@ function recoveryStateOf(snapshot: RecoverySnapshot | undefined): VehicleEngineR
     typeof state.baselineSource !== 'string' ||
     typeof state.source !== 'string'
   ) {
-    throw new Error('Invalid Vehicle Engine Lab recovery state');
+    throw new Error('Invalid Crankwave recovery state');
   }
   return state;
 }
@@ -83,7 +83,7 @@ function activePathOf(viewState: JsonValue): string | null {
   if (!isJsonRecord(viewState)) {
     return null;
   }
-  return typeof viewState.activePath === 'string' && isVehicleEngineProjectPath(viewState.activePath)
+  return typeof viewState.activePath === 'string' && isCrankwaveSourcePath(viewState.activePath)
     ? viewState.activePath
     : null;
 }
@@ -103,7 +103,7 @@ export class VehicleEngineWorkbenchSession implements WorkbenchDocumentSession {
   getPresentation(): WorkbenchDocumentPresentation {
     const snapshot = this.service.getSnapshot();
     return {
-      title: 'Vehicle Engine Lab',
+      title: 'Crankwave',
       icon: VEHICLE_ENGINE_ICON,
       status: statusOf(snapshot),
       dirty: snapshot.document?.workingCopy?.dirty ?? false,
@@ -179,7 +179,7 @@ export class VehicleEngineWorkbenchSession implements WorkbenchDocumentSession {
       identity,
       reason,
       baselineRevision: state.baselineRevision,
-      payload: { kind: VEHICLE_ENGINE_LAB_EDITOR_ID, state } as unknown as JsonValue,
+      payload: { kind: CRANKWAVE_EDITOR_ID, state } as unknown as JsonValue,
     });
   }
 
@@ -210,8 +210,8 @@ export class VehicleEngineDocumentWorkspaceExtension implements ProjectDocumentE
   ) {
     this.identity = createVehicleEngineLabIdentity(projectId);
     this.unregisterRecoveryAdapter = workspace.registerRecoveryAdapter({
-      editorId: VEHICLE_ENGINE_LAB_EDITOR_ID,
-      label: 'Vehicle Engine Lab',
+      editorId: CRANKWAVE_EDITOR_ID,
+      label: 'Crankwave',
       restore: (descriptor, snapshot) => this.restore(descriptor, snapshot),
     });
   }
@@ -220,13 +220,13 @@ export class VehicleEngineDocumentWorkspaceExtension implements ProjectDocumentE
     return (
       asset.assetType === 'data' &&
       typeof asset.path === 'string' &&
-      isVehicleEngineProjectPath(asset.path)
+      isCrankwaveSourcePath(asset.path)
     );
   }
 
   openAsset(asset: AssetActionAsset): void {
     if (!asset.path) {
-      throw new Error('A Vehicle Engine asset must have a project-relative path');
+      throw new Error('A Crankwave source must have a project-relative path');
     }
     this.assertActive();
     const opened = this.openLabSession();
@@ -246,7 +246,7 @@ export class VehicleEngineDocumentWorkspaceExtension implements ProjectDocumentE
     }
     this.disposed = true;
     try {
-      this.workspace.revokeEditorSessions(VEHICLE_ENGINE_LAB_EDITOR_ID);
+      this.workspace.revokeEditorSessions(CRANKWAVE_EDITOR_ID);
     } finally {
       this.unregisterRecoveryAdapter();
     }
@@ -262,7 +262,7 @@ export class VehicleEngineDocumentWorkspaceExtension implements ProjectDocumentE
       descriptor.identity.editorId !== this.identity.editorId ||
       descriptor.identity.resourceUri !== this.identity.resourceUri
     ) {
-      throw new Error('Vehicle Engine Lab cannot restore a foreign document identity');
+      throw new Error('Crankwave cannot restore a foreign document identity');
     }
     const service = new VehicleEngineLabService(this.projectId);
     try {
@@ -292,7 +292,7 @@ export class VehicleEngineDocumentWorkspaceExtension implements ProjectDocumentE
 
   private assertActive(): void {
     if (this.disposed) {
-      throw new Error('Vehicle Engine Lab document extension is disposed');
+      throw new Error('Crankwave document extension is disposed');
     }
   }
 

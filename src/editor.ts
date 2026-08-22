@@ -4,23 +4,23 @@ import {
   type ProjectContentAssetTemplateLease,
   type ProjectDocumentExtensionLease,
 } from '@sparq/workbench-host/project-authoring';
-import { VEHICLE_ENGINE_PROJECT_DIRECTORY, VEHICLE_ENGINE_PROJECT_SUFFIX } from './model';
+import { CRANKWAVE_SOURCE_DIRECTORY, CRANKWAVE_SOURCE_SUFFIX } from './model';
 import { ENGINE_PRESETS } from './presets';
 import {
-  VEHICLE_ENGINE_LAB_EDITOR_ID,
+  CRANKWAVE_EDITOR_ID,
   VehicleEngineDocumentWorkspaceExtension,
 } from './workbench-document';
 
-export interface VehicleEngineLabActivation {
+export interface CrankwaveActivation {
   readonly active: boolean;
   dispose(): void;
 }
 
-type VehicleEngineLabLease = ProjectDocumentExtensionLease | ProjectContentAssetTemplateLease;
+type CrankwaveLease = ProjectDocumentExtensionLease | ProjectContentAssetTemplateLease;
 
-let currentActivation: VehicleEngineLabActivation | null = null;
+let currentActivation: CrankwaveActivation | null = null;
 
-function disposeLeases(leases: readonly VehicleEngineLabLease[]): void {
+function disposeLeases(leases: readonly CrankwaveLease[]): void {
   const failures: Error[] = [];
   for (let index = leases.length - 1; index >= 0; index -= 1) {
     try {
@@ -30,7 +30,7 @@ function disposeLeases(leases: readonly VehicleEngineLabLease[]): void {
     }
   }
   if (failures.length > 0) {
-    throw new AggregateError(failures, 'Vehicle Engine Lab cleanup failed');
+    throw new AggregateError(failures, 'Crankwave cleanup failed');
   }
 }
 
@@ -38,19 +38,19 @@ function disposeLeases(leases: readonly VehicleEngineLabLease[]): void {
  * Activate the package's Editor-only document and preset contributions.
  * The project `sparq.editor` entry owns the returned lease for its context.
  */
-export function activateVehicleEngineLab(): VehicleEngineLabActivation {
+export function activateCrankwave(): CrankwaveActivation {
   if (currentActivation?.active) {
-    throw new Error('Vehicle Engine Lab is already active in this editor context');
+    throw new Error('Crankwave is already active in this editor context');
   }
 
-  const leases: VehicleEngineLabLease[] = [];
+  const leases: CrankwaveLease[] = [];
   try {
     leases.push(
       registerProjectDocumentExtension({
-        id: VEHICLE_ENGINE_LAB_EDITOR_ID,
+        id: CRANKWAVE_EDITOR_ID,
         launcher: {
-          commandId: 'svalchev.vehicle-engine-lab.open',
-          label: 'Vehicle Engine Lab',
+          commandId: 'svalchev.crankwave.open',
+          label: 'Crankwave',
           category: 'Window',
           icon: 'car-01',
         },
@@ -61,13 +61,13 @@ export function activateVehicleEngineLab(): VehicleEngineLabActivation {
     for (const preset of ENGINE_PRESETS) {
       leases.push(
         registerProjectContentAssetTemplate({
-          id: `svalchev.vehicle-engine.preset.${preset.id}`,
+          id: `svalchev.crankwave.preset.${preset.id}`,
           label: preset.label,
           description: preset.description,
           assetType: 'data',
-          defaultName: `${preset.id}${VEHICLE_ENGINE_PROJECT_SUFFIX}`,
-          requiredSuffix: VEHICLE_ENGINE_PROJECT_SUFFIX,
-          createRoots: [VEHICLE_ENGINE_PROJECT_DIRECTORY],
+          defaultName: `${preset.id}${CRANKWAVE_SOURCE_SUFFIX}`,
+          requiredSuffix: CRANKWAVE_SOURCE_SUFFIX,
+          createRoots: [CRANKWAVE_SOURCE_DIRECTORY],
           instantiate: () => preset.sourceJson,
         })
       );
@@ -78,7 +78,7 @@ export function activateVehicleEngineLab(): VehicleEngineLabActivation {
   }
 
   let active = true;
-  const activation: VehicleEngineLabActivation = {
+  const activation: CrankwaveActivation = {
     get active(): boolean {
       return active;
     },

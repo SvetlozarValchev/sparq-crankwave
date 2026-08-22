@@ -1,5 +1,5 @@
 /**
- * Closed wire contract for `engine-sim-offline/engine` documents.
+ * Closed wire contract for `crankwave/engine` documents.
  *
  * Property names intentionally match the authored JSON. The editor presents
  * these values through semantic controls; this module is not a generic JSON
@@ -486,7 +486,7 @@ export interface TransmissionDefinition {
   gears: GearDefinition[];
 }
 
-/** Recognized upstream metadata, intentionally not exposed by Vehicle Engine Lab. */
+/** Recognized upstream metadata, intentionally not exposed by Crankwave. */
 export interface DynoDefaultsDefinition {
   minimum_engine_speed: Quantity<'angular_speed'>;
   maximum_engine_speed: Quantity<'angular_speed'>;
@@ -501,7 +501,7 @@ export interface RigDefinition {
 }
 
 export interface VehicleEngineDocument {
-  schema: 'engine-sim-offline/engine';
+  schema: 'crankwave/engine';
   engine: EngineDefinition;
   presentation: PresentationDefinition;
   rig?: RigDefinition | null;

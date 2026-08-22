@@ -1,0 +1,88 @@
+{
+  "schema": "crankwave/shared-recorded-starter",
+  "id": "shared-recorded-starter-cc0-v1",
+  "purpose": "shared-source-a-and-b-lifecycle-layer",
+  "rights": {
+    "status": "cc0-1.0",
+    "basis": "public-domain-dedication",
+    "creator": "Ika.Komura",
+    "source_url": "https://freesound.org/people/Ika.Komura/sounds/520773/",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "audition_only": false,
+    "modification_authorized": true,
+    "redistribution_authorized": true,
+    "notice": "Car not starting.wav by Ika.Komura is dedicated to the public domain under CC0 1.0."
+  },
+  "audio": {
+    "relative_path": "audio/recorded-starter.cropped.192000hz.mono.f32le",
+    "sample_rate_hz": 192000,
+    "encoding": "float32le",
+    "channel_layout": "mono",
+    "frame_count": 1470912,
+    "byte_count": 5883648,
+    "payload_sha256": "b25b6277e375d5dd92cec98e7d33765a6898461e00597935cd526c850db8c0be",
+    "duration_seconds": 7.661,
+    "peak": 0.35322460532188416,
+    "rms": 0.058424785359228425
+  },
+  "markers": {
+    "repeat_in_frame": 910464,
+    "repeat_out_frame": 1432512,
+    "cut_frame": 1470912,
+    "seam_crossfade_frames": 9600
+  },
+  "mix": {
+    "default_enabled": true,
+    "source_gain": 0.5,
+    "speed_up_start_rpm": 500,
+    "speed_up_end_rpm": 760,
+    "base_playback_rate": 1,
+    "catch_playback_rate": 1,
+    "speed_up_curve": 1.6,
+    "rpm_smoothing_milliseconds": 0,
+    "attack_milliseconds": 8,
+    "pre_catch_engine_gain": 0.903125,
+    "catch_rpm": 400,
+    "ignition_duck_lead_milliseconds": 30,
+    "catch_starter_gain": 0.2,
+    "engine_catch_gain": 1,
+    "handoff_milliseconds": 160,
+    "catch_offset_milliseconds": 0
+  },
+  "provenance": {
+    "source": {
+      "origin": "freesound-cc0-via-pixabay-mp3",
+      "asset_file": "freesound_community-car-not-starting-40006.mp3",
+      "creator": "Ika.Komura",
+      "freesound_sound_id": 520773,
+      "freesound_url": "https://freesound.org/people/Ika.Komura/sounds/520773/",
+      "download_page_url": "https://pixabay.com/sound-effects/city-car-not-starting-40006/",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "818adef5e4737957ddb2ca061a50b05666776ce50c06d866fcc72e9c42767df8",
+      "byte_count": 314880,
+      "codec": "mp3",
+      "sample_rate_hz": 48000,
+      "channels": 1,
+      "channel_relationship": "mono"
+    },
+    "selection": {
+      "description": "user-selected continuous crank bed from the complete CC0 source; initial EQ and level are matched to the replaced runtime asset",
+      "prepared_date": "2026-08-22",
+      "repeat_bed_start_frame": 227616,
+      "repeat_bed_end_frame": 358128,
+      "seam_crossfade_frames_at_48000hz": 2400
+    },
+    "canonicalization": {
+      "method": "decode-mono-then-exact-source-frame-crop-static-eq-rms-match-soxr-resample-and-exact-output-trim",
+      "source_crop_begin_frame_inclusive": 0,
+      "source_crop_end_frame_exclusive": 367728,
+      "source_crop_frames": 367728,
+      "output_sample_rate_hz": 192000,
+      "output_frames": 1470912,
+      "marker_mapping": "relative_source_frame * 4",
+      "ffmpeg_version": "6.1.1-3ubuntu5",
+      "filter_graph": "atrim=start_sample=0:end_sample=367728,asetpts=PTS-STARTPTS,highpass=f=35:poles=2,equalizer=f=180:t=q:w=0.7:g=3,equalizer=f=350:t=q:w=0.8:g=-3,equalizer=f=2800:t=q:w=0.8:g=-3.5,equalizer=f=7000:t=q:w=0.7:g=1,volume=-6.966715dB,aresample=192000:resampler=soxr:precision=33:cheby=0:dither_method=none,atrim=end_sample=1470912"
+    }
+  }
+}

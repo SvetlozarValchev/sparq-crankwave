@@ -1,18 +1,18 @@
 import * as fs from 'engine:fs';
 import type {
-  BakedVehicleEngineMetadata,
+  BakedCrankwaveMetadata,
   BakeWorkerInboundMessage,
   BakeWorkerOutboundMessage,
 } from './bake-protocol';
 import { collectVehicleEngineSourceAssets } from './live-scenario';
 import {
   parseEngineSource,
-  VEHICLE_ENGINE_PROJECT_DIRECTORY,
-  vehicleEngineRuntimePath,
+  CRANKWAVE_SOURCE_DIRECTORY,
+  crankwaveRuntimePath,
 } from './model';
 
-const PACKAGE_ROOT = 'modules/@svalchev/vehicle-engine-lab/vendor/engine-sim-wasm';
-const BAKER_WASM_PATH = `${PACKAGE_ROOT}/engine-sim-offline-baker.wasm`;
+const PACKAGE_ROOT = 'modules/@svalchev/crankwave/vendor/crankwave';
+const BAKER_WASM_PATH = `${PACKAGE_ROOT}/crankwave-baker.wasm`;
 const ASSET_CATALOG_PATH = `${PACKAGE_ROOT}/bake/asset-catalog.v1.json`;
 const STARTER_ROOT = `${PACKAGE_ROOT}/bake/shared-recorded-starter`;
 const STARTER_RUNTIME_PATH = `${STARTER_ROOT}/runtime.json`;
@@ -31,7 +31,7 @@ export type VehicleEngineBakePhase =
 export interface VehicleEngineBakeSnapshot {
   readonly phase: VehicleEngineBakePhase;
   readonly status: string;
-  readonly metadata: BakedVehicleEngineMetadata | null;
+  readonly metadata: BakedCrankwaveMetadata | null;
   readonly runtimePath: string | null;
   readonly savedPath: string | null;
   readonly error: string | null;
@@ -66,7 +66,7 @@ export class VehicleEngineBakeController {
   private bakedBytes: Uint8Array | null = null;
   private bakedSource: string | null = null;
   private bakeAssembly: Uint8Array | null = null;
-  private bakeMetadata: BakedVehicleEngineMetadata | null = null;
+  private bakeMetadata: BakedCrankwaveMetadata | null = null;
   private expectedChunkCount = 0;
   private nextChunkIndex = 0;
   private receivedChunkBytes = 0;
@@ -155,7 +155,7 @@ export class VehicleEngineBakeController {
       this.replace({
         ...this.snapshot,
         status: `Preparing a full-fidelity bake for ${parsed.summary.displayName}…`,
-        runtimePath: vehicleEngineRuntimePath(parsed.summary.id),
+        runtimePath: crankwaveRuntimePath(parsed.summary.id),
       });
     } catch (error) {
       this.fail(generation, errorText(error));
@@ -184,7 +184,7 @@ export class VehicleEngineBakeController {
     const path = this.snapshot.runtimePath;
     this.replace({ ...this.snapshot, phase: 'saving', status: `Writing ${path}…`, error: null });
     try {
-      await fs.mkdirRecursive(VEHICLE_ENGINE_PROJECT_DIRECTORY, true);
+      await fs.mkdirRecursive(CRANKWAVE_SOURCE_DIRECTORY, true);
       await fs.writeFileBuffer(path, this.bakedBytes);
       const written = await fs.stat(path);
       if (written.size !== BigInt(this.bakedBytes.byteLength)) {
@@ -329,7 +329,7 @@ export class VehicleEngineBakeController {
       phase: 'ready',
       status: 'Full carrier baked and runtime-verified in memory',
       metadata,
-      runtimePath: vehicleEngineRuntimePath(metadata.engineId),
+      runtimePath: crankwaveRuntimePath(metadata.engineId),
       savedPath: null,
       error: null,
     });

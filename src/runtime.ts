@@ -1,19 +1,18 @@
-import * as fs from 'engine:fs';
 import type { VehicleEngineDocument } from './authoring-contract';
-import { isVehicleEngineRuntimePath } from './model';
+import { isCrankwavePath } from './model';
 import { SHA256_CRYPTO } from './sha256';
-import { DeviceRateResampler } from '../vendor/engine-sim-wasm/runtime/device-resampler';
+import { DeviceRateResampler } from '../vendor/crankwave/runtime/device-resampler';
 import {
-  VehicleEngineAudioEngine,
-  type VehicleEngineOperatingPoint,
-} from '../vendor/engine-sim-wasm/runtime/vehicleengine-audio-engine';
+  CrankwaveAudioEngine,
+  type CrankwaveOperatingPoint,
+} from '../vendor/crankwave/runtime/crankwave-audio-engine';
 
-export interface BakedVehicleEngineRuntimeOptions {
+export interface BakedCrankwaveRuntimeOptions {
   readonly outputSampleRate: number;
   readonly sessionSeed?: string;
 }
 
-export interface BakedVehicleEngineRuntimeFormat {
+export interface BakedCrankwaveRuntimeFormat {
   readonly sourceSampleRate: number;
   readonly outputSampleRate: number;
   readonly channelCount: 1;
@@ -22,40 +21,41 @@ export interface BakedVehicleEngineRuntimeFormat {
 }
 
 /**
- * Simulator-independent SPARQ consumer for a verified `*.vehicleengine` carrier.
+ * Simulator-independent SPARQ consumer for a verified `*.crankwave` carrier.
  * It has no editor, JSON, WASM, or native-audio dependency and returns device-rate
  * mono PCM for the caller to route through the engine mixer.
  */
-export class BakedVehicleEngineRuntime {
+export class BakedCrankwaveRuntime {
   static async loadProjectFile(
     path: string,
-    options: BakedVehicleEngineRuntimeOptions
-  ): Promise<BakedVehicleEngineRuntime> {
-    if (!isVehicleEngineRuntimePath(path)) {
-      throw new Error(`Baked vehicle engine path must end in .vehicleengine: ${path}`);
+    options: BakedCrankwaveRuntimeOptions
+  ): Promise<BakedCrankwaveRuntime> {
+    if (!isCrankwavePath(path)) {
+      throw new Error(`Baked vehicle engine path must end in .crankwave: ${path}`);
     }
-    return BakedVehicleEngineRuntime.load(await fs.readFileBuffer(path), options);
+    const fs = await import('engine:fs');
+    return BakedCrankwaveRuntime.load(await fs.readFileBuffer(path), options);
   }
 
   static async load(
     bytes: ArrayBuffer | ArrayBufferView,
-    options: BakedVehicleEngineRuntimeOptions
-  ): Promise<BakedVehicleEngineRuntime> {
+    options: BakedCrankwaveRuntimeOptions
+  ): Promise<BakedCrankwaveRuntime> {
     const outputSampleRate = options.outputSampleRate;
     if (!Number.isSafeInteger(outputSampleRate) || outputSampleRate < 8_000 || outputSampleRate > 192_000) {
       throw new RangeError('outputSampleRate must be an integer in [8000, 192000] Hz');
     }
-    const engine = await VehicleEngineAudioEngine.load(bytes, {
+    const engine = await CrankwaveAudioEngine.load(bytes, {
       crypto: SHA256_CRYPTO,
       sessionSeed: options.sessionSeed ?? '0',
     });
-    return new BakedVehicleEngineRuntime(engine, outputSampleRate);
+    return new BakedCrankwaveRuntime(engine, outputSampleRate);
   }
 
   private resampler: DeviceRateResampler;
 
   private constructor(
-    private readonly engine: VehicleEngineAudioEngine,
+    private readonly engine: CrankwaveAudioEngine,
     readonly outputSampleRate: number
   ) {
     this.resampler = this.createResampler();
@@ -66,7 +66,7 @@ export class BakedVehicleEngineRuntime {
   get maximumRpm(): number { return this.engine.maximumRpm; }
   get preferredSourceFrames(): number { return this.engine.processFrames; }
 
-  get format(): BakedVehicleEngineRuntimeFormat {
+  get format(): BakedCrankwaveRuntimeFormat {
     return Object.freeze({
       sourceSampleRate: this.engine.sampleRate,
       outputSampleRate: this.outputSampleRate,
@@ -77,7 +77,7 @@ export class BakedVehicleEngineRuntime {
   }
 
   process(
-    point: VehicleEngineOperatingPoint,
+    point: CrankwaveOperatingPoint,
     sourceFrameCount = this.engine.processFrames
   ): Float32Array {
     return this.resampler.push(this.engine.process(point, sourceFrameCount));
@@ -101,7 +101,7 @@ export class BakedVehicleEngineRuntime {
   }
 }
 
-export interface VehicleDrivetrainSample extends VehicleEngineOperatingPoint {
+export interface VehicleDrivetrainSample extends CrankwaveOperatingPoint {
   readonly gearIndex: number;
   readonly gearId: string;
   readonly gearRatio: number;

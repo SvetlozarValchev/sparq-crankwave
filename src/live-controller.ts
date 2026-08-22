@@ -9,7 +9,7 @@ import type {
 } from './live-protocol';
 
 const WASM_PATH =
-  'modules/@svalchev/vehicle-engine-lab/vendor/engine-sim-wasm/engine-sim-offline.wasm';
+  'modules/@svalchev/crankwave/vendor/crankwave/crankwave.wasm';
 const TARGET_LEAD_SECONDS = 0.25;
 const RENDER_BLOCKS_PER_CHUNK = 10;
 const PREBUFFER_CHUNKS = 2;
@@ -110,7 +110,7 @@ export class LiveEngineBenchController {
     this.replace({
       ...initialSnapshot(),
       phase: 'loading',
-      status: 'Loading Engine Sim WASM and engine resources…',
+      status: 'Loading Crankwave WASM and engine resources…',
       controls: this.snapshot.controls,
     });
 
@@ -135,7 +135,7 @@ export class LiveEngineBenchController {
 
       this.deviceRateHz = audio.getSampleRate();
       const worker = createWorker('./live-worker.ts', {
-        name: 'vehicle-engine-lab-10khz',
+        name: 'crankwave-live-10khz',
         capabilities: ['thread.realtime-audio'],
       });
       this.worker = worker;
@@ -351,7 +351,7 @@ export class LiveEngineBenchController {
       status: 'Live bench failed',
       error: message,
     });
-    console.error(`[vehicle-engine-lab] ${message}`);
+    console.error(`[crankwave] ${message}`);
   }
 
   private stopRuntime(): void {

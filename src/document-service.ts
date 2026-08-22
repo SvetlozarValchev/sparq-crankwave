@@ -7,7 +7,7 @@ import {
 } from '@sparq/editor-documents';
 import {
   ENGINE_MAX_SOURCE_BYTES,
-  isVehicleEngineProjectPath,
+  isCrankwaveSourcePath,
   parseEngineSource,
   type EngineSourceSummary,
 } from './model';
@@ -103,7 +103,7 @@ export function createVehicleEngineProjectBackend(): VehicleEngineProjectBackend
           listenerId = module.onFileChanged(listener);
         },
         (error: unknown) => {
-          console.error('[vehicle-engine-lab] project file watching is unavailable', error);
+          console.error('[crankwave] project file watching is unavailable', error);
         }
       );
       return () => {
@@ -120,7 +120,7 @@ export function createVehicleEngineProjectBackend(): VehicleEngineProjectBackend
 }
 
 /**
- * Exact-text project document authority for one complete Engine Sim WASM source.
+ * Exact-text project document authority for one complete Crankwave source.
  * The working copy stores source text, so unknown schema fields, array order,
  * number spellings, and formatting survive an untouched open/save cycle.
  */
@@ -150,7 +150,7 @@ export class VehicleEngineDocumentService {
     readonly identity: DocumentIdentity,
     private readonly backend: VehicleEngineProjectBackend = createVehicleEngineProjectBackend()
   ) {
-    if (!isVehicleEngineProjectPath(identity.displayPath)) {
+    if (!isCrankwaveSourcePath(identity.displayPath)) {
       throw new Error(`Invalid vehicle engine project path '${identity.displayPath}'`);
     }
     this.unsubscribeFiles =
@@ -215,7 +215,7 @@ export class VehicleEngineDocumentService {
     }
     const result = await workingCopy.save(async (request) => {
       if (!request.expectedRevision) {
-        throw new Error('Vehicle Engine Lab documents must already exist in the project');
+        throw new Error('Crankwave documents must already exist in the project');
       }
       const revision = await this.backend.writeVersioned(
         request.identity.displayPath,
@@ -229,7 +229,7 @@ export class VehicleEngineDocumentService {
       try {
         await this.backend.notifyFileChanged?.(result.identity.displayPath);
       } catch (error) {
-        console.warn('[vehicle-engine-lab] saved engine but could not broadcast its file change', {
+        console.warn('[crankwave] saved engine but could not broadcast its file change', {
           path: result.identity.displayPath,
           error,
         });
@@ -271,7 +271,7 @@ export class VehicleEngineDocumentService {
     const workingCopy = this.requireWorkingCopy();
     const snapshot = workingCopy.getSnapshot();
     if (!snapshot.baselineRevision) {
-      throw new Error('Vehicle Engine Lab recovery requires a persisted project document');
+      throw new Error('Crankwave recovery requires a persisted project document');
     }
     return Object.freeze({
       schemaVersion: 1,
@@ -291,7 +291,7 @@ export class VehicleEngineDocumentService {
       typeof state.baselineSource !== 'string' ||
       typeof state.source !== 'string'
     ) {
-      throw new Error('Invalid Vehicle Engine Lab recovery state');
+      throw new Error('Invalid Crankwave recovery state');
     }
     parseEngineSource(state.baselineSource);
     const sequence = ++this.operationSequence;
@@ -394,7 +394,7 @@ export class VehicleEngineDocumentService {
   private requireWorkingCopy(): WorkingCopy<string> {
     this.assertActive();
     if (!this.workingCopy) {
-      throw new Error('Vehicle Engine Lab document is not ready');
+      throw new Error('Crankwave document is not ready');
     }
     return this.workingCopy;
   }
@@ -405,7 +405,7 @@ export class VehicleEngineDocumentService {
 
   private assertActive(): void {
     if (this.disposed) {
-      throw new Error('Vehicle Engine Lab document service is disposed');
+      throw new Error('Crankwave document service is disposed');
     }
   }
 
@@ -435,12 +435,12 @@ export function createVehicleEngineDocumentIdentity(
   projectId: string,
   path: string
 ): DocumentIdentity {
-  if (!isVehicleEngineProjectPath(path)) {
+  if (!isCrankwaveSourcePath(path)) {
     throw new Error(`Invalid vehicle engine project path '${path}'`);
   }
   return createDocumentIdentity({
     projectId,
-    editorId: 'vehicle-engine-lab',
+    editorId: 'crankwave',
     resourceUri: `project-file:/${path}`,
     displayPath: path,
   });

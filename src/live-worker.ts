@@ -1,7 +1,7 @@
-import createEngineSimModule from '../vendor/engine-sim-wasm/engine-sim-offline';
-import { SessionExecutionKind } from '../vendor/engine-sim-wasm/live-runtime/c-api-abi';
-import { EngineSimCapiClient } from '../vendor/engine-sim-wasm/live-runtime/c-api-client';
-import { DeviceRateResampler } from '../vendor/engine-sim-wasm/runtime/device-resampler';
+import createCrankwaveModule from '../vendor/crankwave/crankwave';
+import { SessionExecutionKind } from '../vendor/crankwave/runtime/c-api-abi';
+import { CrankwaveCapiClient } from '../vendor/crankwave/runtime/c-api-client';
+import { DeviceRateResampler } from '../vendor/crankwave/runtime/device-resampler';
 import type {
   LiveEngineControls,
   LiveInitializeMessage,
@@ -11,8 +11,8 @@ import type {
 
 const LIVE_MIX_GAIN = 0.5011872336272722; // -6 dBFS mix headroom.
 
-let client: EngineSimCapiClient | null = null;
-let program: ReturnType<EngineSimCapiClient['compile']> | null = null;
+let client: CrankwaveCapiClient | null = null;
+let program: ReturnType<CrankwaveCapiClient['compile']> | null = null;
 let resampler: DeviceRateResampler | null = null;
 let rendering = false;
 let preparationBlocks = 0;
@@ -99,17 +99,17 @@ async function initialize(message: LiveInitializeMessage): Promise<void> {
   }
   const wasmBytes = new Uint8Array(message.wasmBinary);
   if (wasmBytes.byteLength === 0) {
-    throw new Error('Transferred Engine Sim WASM module is empty');
+    throw new Error('Transferred Crankwave WASM module is empty');
   }
   // The editor worker is intentionally not a browser: it has WebAssembly but no
   // URL/fetch globals. Supplying locateFile keeps Emscripten from resolving its
   // unused sidecar path through URL while wasmBinary remains the sole authority.
-  const module = await createEngineSimModule({
+  const module = await createCrankwaveModule({
     wasmBinary: wasmBytes,
     noInitialRun: true,
     locateFile: (path) => path,
   });
-  client = new EngineSimCapiClient(module);
+  client = new CrankwaveCapiClient(module);
   program = client.compile(
     message.engineJson,
     message.scenarioJson,

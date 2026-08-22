@@ -1,10 +1,10 @@
 import { utf8Encode } from '@sparq/shared';
 import type { VehicleEngineDocument } from './authoring-contract';
 
-export const ENGINE_SOURCE_SCHEMA = 'engine-sim-offline/engine' as const;
-export const VEHICLE_ENGINE_PROJECT_DIRECTORY = 'vehicle-engines' as const;
-export const VEHICLE_ENGINE_PROJECT_SUFFIX = '.vehicle-engine.json' as const;
-export const VEHICLE_ENGINE_RUNTIME_SUFFIX = '.vehicleengine' as const;
+export const ENGINE_SOURCE_SCHEMA = 'crankwave/engine' as const;
+export const CRANKWAVE_SOURCE_DIRECTORY = 'crankwave-engines' as const;
+export const CRANKWAVE_SOURCE_SUFFIX = '.crankwave.json' as const;
+export const CRANKWAVE_RUNTIME_SUFFIX = '.crankwave' as const;
 export const ENGINE_MAX_SOURCE_BYTES = 2 * 1024 * 1024;
 
 export interface EngineSourceSummary {
@@ -161,35 +161,35 @@ export function formatEngineSource(source: string): string {
   return `${JSON.stringify(parsed.document, null, 2)}\n`;
 }
 
-export function isVehicleEngineProjectPath(path: string): boolean {
+export function isCrankwaveSourcePath(path: string): boolean {
   return (
-    path.startsWith(`${VEHICLE_ENGINE_PROJECT_DIRECTORY}/`) &&
-    path.endsWith(VEHICLE_ENGINE_PROJECT_SUFFIX) &&
+    path.startsWith(`${CRANKWAVE_SOURCE_DIRECTORY}/`) &&
+    path.endsWith(CRANKWAVE_SOURCE_SUFFIX) &&
     !path.startsWith('/') &&
     !path.includes('\\') &&
     !path.split('/').some((segment) => segment === '' || segment === '.' || segment === '..')
   );
 }
 
-export function isVehicleEngineRuntimePath(path: string): boolean {
+export function isCrankwavePath(path: string): boolean {
   return (
-    path.endsWith(VEHICLE_ENGINE_RUNTIME_SUFFIX) &&
+    path.endsWith(CRANKWAVE_RUNTIME_SUFFIX) &&
     !path.startsWith('/') &&
     !path.includes('\\') &&
     !path.split('/').some((segment) => segment === '' || segment === '.' || segment === '..')
   );
 }
 
-export function vehicleEngineRuntimePath(engineId: string): string {
+export function crankwaveRuntimePath(engineId: string): string {
   if (!/^[a-z0-9](?:[a-z0-9._-]{0,126}[a-z0-9])?$/.test(engineId)) {
     throw new Error(`Engine ID '${engineId}' cannot be used as a portable runtime filename`);
   }
-  return `${VEHICLE_ENGINE_PROJECT_DIRECTORY}/${engineId}${VEHICLE_ENGINE_RUNTIME_SUFFIX}`;
+  return `${CRANKWAVE_SOURCE_DIRECTORY}/${engineId}${CRANKWAVE_RUNTIME_SUFFIX}`;
 }
 
-export function vehicleEngineDocumentNameFromPath(path: string): string {
+export function crankwaveDocumentNameFromPath(path: string): string {
   const filename = path.slice(path.lastIndexOf('/') + 1);
-  return filename.endsWith(VEHICLE_ENGINE_PROJECT_SUFFIX)
-    ? filename.slice(0, -VEHICLE_ENGINE_PROJECT_SUFFIX.length)
+  return filename.endsWith(CRANKWAVE_SOURCE_SUFFIX)
+    ? filename.slice(0, -CRANKWAVE_SOURCE_SUFFIX.length)
     : filename;
 }

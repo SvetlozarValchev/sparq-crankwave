@@ -35,7 +35,7 @@ export function VehicleEngineLiveBench({ source, sourceValid }: VehicleEngineLiv
     <div className={styles.livePane}>
       <section className={styles.liveHero}>
         <div>
-          <span className={styles.eyebrow}>Engine Sim WASM · Editor bench</span>
+          <span className={styles.eyebrow}>Crankwave WASM · Editor bench</span>
           <div className={styles.rpmReadout}>
             {Math.round(snapshot.rpm).toLocaleString()}
             <small>rpm</small>

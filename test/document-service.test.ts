@@ -7,7 +7,7 @@ import {
 } from '../src/document-service';
 
 function source(id: string, extra = ''): string {
-  return `{"schema":"engine-sim-offline/engine","engine":{"identity":{"id":"${id}","display_name":"${id}"}${extra}}}`;
+  return `{"schema":"crankwave/engine","engine":{"identity":{"id":"${id}","display_name":"${id}"}${extra}},"presentation":{}}`;
 }
 
 class Project {
@@ -53,10 +53,10 @@ async function settleExternalRead(): Promise<void> {
   await Promise.resolve();
 }
 
-describe('Vehicle Engine Lab document service', () => {
+describe('Crankwave document service', () => {
   it('keeps the React external-store snapshot stable between actual updates', async () => {
     const project = new Project();
-    const path = 'vehicle-engines/fixture.vehicle-engine.json';
+    const path = 'crankwave-engines/fixture.crankwave.json';
     project.files.set(path, { data: source('fixture'), version: 'v1' });
     const service = new VehicleEngineDocumentService(
       createVehicleEngineDocumentIdentity('project-a', path),
@@ -72,10 +72,10 @@ describe('Vehicle Engine Lab document service', () => {
     service.dispose();
   });
 
-  it('preserves exact source text and every unknown field through persistence', async () => {
+  it('preserves exact valid source text and numeric precision through persistence', async () => {
     const project = new Project();
-    const path = 'vehicle-engines/fixture.vehicle-engine.json';
-    const original = `${source('fixture-v8', ',"future":{"precision":1.2345678901234567}')}\n`;
+    const path = 'crankwave-engines/fixture.crankwave.json';
+    const original = `${source('fixture-v8', ',"limits":{"redline":{"value":1.2345678901234567,"unit":"rpm"}}')}\n`;
     project.files.set(path, { data: original, version: 'v1' });
     const service = new VehicleEngineDocumentService(
       createVehicleEngineDocumentIdentity('project-a', path),
@@ -90,13 +90,13 @@ describe('Vehicle Engine Lab document service', () => {
 
     expect(result.status).toBe('saved');
     expect(project.writes).toEqual([edited]);
-    expect(project.writes[0]?.includes('future')).toBe(true);
+    expect(project.writes[0]?.includes('1.2345678901234567')).toBe(true);
     service.dispose();
   });
 
   it('keeps invalid edits in memory but blocks their persistence', async () => {
     const project = new Project();
-    const path = 'vehicle-engines/fixture.vehicle-engine.json';
+    const path = 'crankwave-engines/fixture.crankwave.json';
     project.files.set(path, { data: source('fixture'), version: 'v1' });
     const service = new VehicleEngineDocumentService(
       createVehicleEngineDocumentIdentity('project-a', path),
@@ -116,7 +116,7 @@ describe('Vehicle Engine Lab document service', () => {
 
   it('adopts clean external changes and preserves dirty conflicts', async () => {
     const project = new Project();
-    const path = 'vehicle-engines/fixture.vehicle-engine.json';
+    const path = 'crankwave-engines/fixture.crankwave.json';
     project.files.set(path, { data: source('original'), version: 'v1' });
     const service = new VehicleEngineDocumentService(
       createVehicleEngineDocumentIdentity('project-a', path),

@@ -54,7 +54,7 @@ export function VehicleEngineBakePanel({
     <div className={styles.bakePane}>
       <section className={styles.bakeHero} data-phase={snapshot.phase}>
         <div>
-          <span className={styles.eyebrow}>Full-fidelity Engine Sim WASM baker</span>
+          <span className={styles.eyebrow}>Full-fidelity Crankwave WASM baker</span>
           <h3>{ready && current ? 'Runtime carrier ready' : 'Bake the working source'}</h3>
           <p>{snapshot.status}</p>
           {ready && !current && (
@@ -78,7 +78,7 @@ export function VehicleEngineBakePanel({
             disabled={!ready || !current || snapshot.phase === 'saving'}
             onClick={save}
           >
-            Save .vehicleengine
+            Save .crankwave
           </Button>
         </div>
       </section>

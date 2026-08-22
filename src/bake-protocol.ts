@@ -20,7 +20,7 @@ export type BakeWorkerInboundMessage =
   | { readonly type: 'pull-chunk'; readonly index: number }
   | { readonly type: 'dispose' };
 
-export interface BakedVehicleEngineMetadata {
+export interface BakedCrankwaveMetadata {
   readonly engineId: string;
   readonly profileId: string;
   readonly byteCount: number;
@@ -44,7 +44,7 @@ export type BakeWorkerOutboundMessage =
       readonly type: 'begin';
       readonly chunkCount: number;
       readonly chunkByteLimit: number;
-      readonly metadata: BakedVehicleEngineMetadata;
+      readonly metadata: BakedCrankwaveMetadata;
     }
   | {
       readonly type: 'chunk';

@@ -6,12 +6,12 @@ import {
 } from '../src/document-service';
 import {
   VehicleEngineLabService,
-  vehicleEngineProjectPathForName,
+  crankwaveSourcePathForName,
   type VehicleEngineProjectLibrary,
 } from '../src/lab-service';
 
 function source(id: string): string {
-  return `{"schema":"engine-sim-offline/engine","engine":{"identity":{"id":"${id}","display_name":"${id}"}}}`;
+  return `{"schema":"crankwave/engine","engine":{"identity":{"id":"${id}","display_name":"${id}"}},"presentation":{}}`;
 }
 
 class Project {
@@ -57,11 +57,11 @@ class Project {
   }
 }
 
-describe('Vehicle Engine Lab project service', () => {
+describe('Crankwave project service', () => {
   it('uses one lab snapshot while switching clean project engines inside it', async () => {
     const project = new Project();
-    const first = vehicleEngineProjectPathForName('first');
-    const second = vehicleEngineProjectPathForName('second');
+    const first = crankwaveSourcePathForName('first');
+    const second = crankwaveSourcePathForName('second');
     project.files.set(first, { data: source('first'), version: 'v1' });
     project.files.set(second, { data: source('second'), version: 'v2' });
     const lab = project.createLab();
@@ -78,8 +78,8 @@ describe('Vehicle Engine Lab project service', () => {
 
   it('keeps a dirty engine active until the user confirms an internal open', async () => {
     const project = new Project();
-    const first = vehicleEngineProjectPathForName('first');
-    const second = vehicleEngineProjectPathForName('second');
+    const first = crankwaveSourcePathForName('first');
+    const second = crankwaveSourcePathForName('second');
     project.files.set(first, { data: source('first'), version: 'v1' });
     project.files.set(second, { data: source('second'), version: 'v2' });
     const lab = project.createLab();
@@ -101,7 +101,7 @@ describe('Vehicle Engine Lab project service', () => {
     const lab = project.createLab();
     const path = await lab.createFromSource('new-v8', source('new-v8'));
 
-    expect(path).toBe('vehicle-engines/new-v8.vehicle-engine.json');
+    expect(path).toBe('crankwave-engines/new-v8.crankwave.json');
     expect(project.files.get(path)?.data).toBe(source('new-v8'));
     expect(lab.getSnapshot().activePath).toBe(path);
     expect(lab.getSnapshot().document?.summary?.id).toBe('new-v8');
@@ -109,7 +109,7 @@ describe('Vehicle Engine Lab project service', () => {
   });
 
   it('rejects ambiguous or traversing file names', () => {
-    expect(() => vehicleEngineProjectPathForName('../engine')).toThrow();
-    expect(() => vehicleEngineProjectPathForName('engine/name')).toThrow();
+    expect(() => crankwaveSourcePathForName('../engine')).toThrow();
+    expect(() => crankwaveSourcePathForName('engine/name')).toThrow();
   });
 });
