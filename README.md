@@ -13,14 +13,15 @@
 
 <p align="center">
   <a href="https://playsparq.com">SPARQ</a> ·
-  <a href="https://github.com/SvetlozarValchev/crankwave">Crankwave</a>
+  <a href="https://github.com/SvetlozarValchev/crankwave">Crankwave</a> ·
+  @svalchev/crankwave
 </p>
 
-<p align="center">
+<!--p align="center">
   <a href="https://packages.playsparq.com/package/@svalchev/crankwave" target="_blank" rel="noopener noreferrer">
-    <img src="docs/assets/spm-package.svg" alt="SPM package: @svalchev/crankwave" height="28">
+    <img src="docs/assets/spm-package.svg" alt="SPM package: " height="28">
   </a>
-</p>
+</p-->
 
 **sparq-crankwave** is a third-party package that brings
 [Crankwave](https://github.com/SvetlozarValchev/crankwave) into the
