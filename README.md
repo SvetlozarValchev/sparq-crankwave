@@ -14,7 +14,7 @@
 <p align="center">
   <a href="https://playsparq.com">SPARQ</a> ·
   <a href="https://github.com/SvetlozarValchev/crankwave">Crankwave</a> ·
-  @svalchev/crankwave
+  <code>@svalchev/crankwave</code>
 </p>
 
 <!--p align="center">
