@@ -31,7 +31,17 @@ rather than a separate authored approximation.
 
 ## Demo
 
-[Watch the SPARQ × Crankwave demo](docs/assets/sparq-crankwave-demo.mp4)
+<p align="center">
+  <a href="docs/assets/sparq-crankwave-demo.mp4">
+    <img src="docs/assets/sparq-crankwave-demo-poster.jpg"
+         alt="SPARQ × Crankwave vehicle demo"
+         width="960">
+  </a>
+</p>
+
+<p align="center">
+  <a href="docs/assets/sparq-crankwave-demo.mp4">▶ Watch the demo with sound</a>
+</p>
 
 The source boundary is deliberately lossless. Project-local sources are full
 `*.crankwave.json` documents under `crankwave-engines/`; the editor does not
