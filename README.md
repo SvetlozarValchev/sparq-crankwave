@@ -29,6 +29,10 @@
 vehicle workflow. Engine audio is an output of the same mechanical simulation
 rather than a separate authored approximation.
 
+## Demo
+
+[Watch the SPARQ × Crankwave demo](docs/assets/sparq-crankwave-demo.mp4)
+
 The source boundary is deliberately lossless. Project-local sources are full
 `*.crankwave.json` documents under `crankwave-engines/`; the editor does not
 project them into a reduced semantic format. Package presets copy complete
