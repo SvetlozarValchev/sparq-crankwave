@@ -17,6 +17,7 @@
     "./authoring-semantics": "./src/authoring-semantics.ts",
     "./resources": "./src/resources.ts",
     "./runtime": "./src/runtime.ts",
+    "./audio-worker": "./src/audio-worker.ts",
     "./presets": "./src/presets.ts",
     "./document-service": "./src/document-service.ts",
     "./document-view": "./src/VehicleEngineLabDocument.tsx",

@@ -47,4 +47,32 @@ describe('Crankwave live scenario', () => {
       }
     }
   });
+
+  it('starts live-capable presets at the executor-exact output crankshaft TDC', () => {
+    const presets = ENGINE_PRESETS.filter(
+      (preset) => preset.id === 'sequoia-3ur-fe-cleanroom' || preset.id === 'bmw-m52b28'
+    );
+    for (const preset of presets) {
+      const source = JSON.parse(preset.sourceJson) as {
+        engine: {
+          output_crankshaft: string;
+          crankshafts: Array<{
+            id: string;
+            tdc_reference_angle: { value: number; unit: string };
+          }>;
+        };
+      };
+      const scenario = JSON.parse(createLiveEngineProgram(preset.sourceJson).scenarioJson) as {
+        initial_state: { crank_angle: { value: number; unit: string } };
+      };
+      const outputCrankshaft = source.engine.crankshafts.find(
+        (crankshaft) => crankshaft.id === source.engine.output_crankshaft
+      )!;
+      const expectedRadians = outputCrankshaft.tdc_reference_angle.unit === 'rad'
+        ? outputCrankshaft.tdc_reference_angle.value
+        : outputCrankshaft.tdc_reference_angle.value * (3.14159265359 / 180);
+      expect(scenario.initial_state.crank_angle.value).toBe(expectedRadians);
+      expect(scenario.initial_state.crank_angle.unit).toBe('rad');
+    }
+  });
 });

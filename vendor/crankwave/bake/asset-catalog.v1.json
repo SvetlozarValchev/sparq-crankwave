@@ -4,6 +4,11 @@
     {
       "kind": "accessory-configuration",
       "id": "warm-generic-accessories",
+      "sha256": "8a7c4d18ec7734d1c155f582b45ce3d82673052f3188061e2cfa3612e13fbee4"
+    },
+    {
+      "kind": "accessory-configuration",
+      "id": "warm-generic-accessories",
       "sha256": "87d514d95c85d847d961908249dff0e18789b90fab522c5ef9d9f5dee334e62e"
     },
     {

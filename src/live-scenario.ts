@@ -107,6 +107,39 @@ function outputBuses(document: JsonRecord): readonly string[] {
   return buses;
 }
 
+function initialCrankAngle(engine: JsonRecord): Readonly<{ value: number; unit: 'rad' }> {
+  const outputCrankshaft = nonemptyText(engine.output_crankshaft, 'engine.output_crankshaft');
+  const crankshafts = entries(engine.crankshafts, 'engine.crankshafts').map((value, index) =>
+    record(value, `engine.crankshafts[${index}]`)
+  );
+  const crankshaft = crankshafts.find(
+    (candidate) => candidate.id === outputCrankshaft
+  );
+  if (crankshaft === undefined) {
+    throw new Error(`engine.output_crankshaft '${outputCrankshaft}' does not identify a crankshaft`);
+  }
+  const tdc = record(
+    crankshaft.tdc_reference_angle,
+    `engine.crankshafts['${outputCrankshaft}'].tdc_reference_angle`
+  );
+  if (typeof tdc.value !== 'number' || !Number.isFinite(tdc.value)) {
+    throw new Error(
+      `engine.crankshafts['${outputCrankshaft}'].tdc_reference_angle.value must be finite`
+    );
+  }
+  if (tdc.unit !== 'deg' && tdc.unit !== 'rad') {
+    throw new Error(
+      `engine.crankshafts['${outputCrankshaft}'].tdc_reference_angle.unit must be 'deg' or 'rad'`
+    );
+  }
+  // The current low-order executor stores engine mechanism angles using its
+  // frozen legacy-pi conversion, then requires the scenario's initial angle to
+  // match that binary64 value exactly. Supplying the original degree quantity
+  // would pass through the newer SI converter and differ by a few low bits.
+  const value = tdc.unit === 'rad' ? tdc.value : tdc.value * (3.14159265359 / 180);
+  return Object.freeze({ value, unit: 'rad' });
+}
+
 export function createLiveEngineProgram(source: string): LiveEngineProgram {
   const parsed = parseEngineSource(source);
   const document = parsed.document as JsonRecord;
@@ -144,7 +177,7 @@ export function createLiveEngineProgram(source: string): LiveEngineProgram {
     },
     initial_state: {
       engine_speed: { value: 650, unit: 'rpm' },
-      crank_angle: { value: 0.7853981633975, unit: 'rad' },
+      crank_angle: initialCrankAngle(engine),
       ignition_enabled: true,
       fuel_enabled: true,
       starter_enabled: false,

@@ -153,6 +153,12 @@ export const PACKAGE_RESOURCES: readonly PackageResource[] = Object.freeze([
     '22a458bb5a2b768403637d36dc8e60af0519050187ee524c9131d796eba93355'
   ),
   accessory(
+    '3ur-fe-warm-generic-accessories-v1',
+    '3UR-FE warm-running aggregate loss',
+    ['3ur-fe'],
+    '8a7c4d18ec7734d1c155f582b45ce3d82673052f3188061e2cfa3612e13fbee4'
+  ),
+  accessory(
     'sequoia-3ur-fe-cleanroom-warm-generic-accessories-v1',
     'Toyota 3UR-FE warm-running aggregate loss',
     ['sequoia-3ur-fe-cleanroom'],

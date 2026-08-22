@@ -5,7 +5,7 @@ import {
 } from "./shared-recorded-starter-runtime.js";
 
 // Avoid requiring browser text codecs merely to import the runtime module.
-const MAGIC = Uint8Array.of(86, 69, 72, 69, 78, 71, 48, 49);
+const MAGIC = Uint8Array.of(67, 82, 75, 87, 65, 86, 69, 49);
 const CONTAINER_VERSION = 1;
 const HEADER_BYTES = 128;
 const INDEX_ENTRY_PREFIX_BYTES = 56;
