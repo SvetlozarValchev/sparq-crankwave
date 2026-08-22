@@ -24,7 +24,7 @@
 
 **sparq-crankwave** is a third-party package that brings
 [Crankwave](https://github.com/SvetlozarValchev/crankwave) into the
-[SPARQ native game engine](https://playsparq.com), with a complete editor-to-
+[SPARQ game engine](https://playsparq.com), with a complete editor-to-
 vehicle workflow. Engine audio is an output of the same mechanical simulation
 rather than a separate authored approximation.
 
