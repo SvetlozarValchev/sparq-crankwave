@@ -1,12 +1,27 @@
-# sparq-crankwave
+<p align="center">
+  <a href="https://playsparq.com">
+    <img src="docs/assets/sparq-logo.png" alt="SPARQ logo" width="112">
+  </a>
+</p>
 
-A third-party package that integrates
-[Crankwave](https://github.com/SvetlozarValchev/crankwave) into
-[SPARQ](https://playsparq.com), with engine editing, baking, and vehicle runtime
-playback.
+<h1 align="center">SPARQ × Crankwave</h1>
 
-Install it through SPM as `@svalchev/crankwave`. Engine audio is an output of
-the same mechanical simulation rather than a separate authored approximation.
+<p align="center">
+  <strong>Vehicle-engine authoring, live simulation, deterministic baking, and
+  runtime playback for SPARQ.</strong>
+</p>
+
+<p align="center">
+  <a href="https://playsparq.com">SPARQ</a> ·
+  <a href="https://github.com/SvetlozarValchev/crankwave">Crankwave</a> ·
+  <code>@svalchev/crankwave</code>
+</p>
+
+**sparq-crankwave** is a third-party package that brings
+[Crankwave](https://github.com/SvetlozarValchev/crankwave) into the
+[SPARQ native game engine](https://playsparq.com), with a complete editor-to-
+vehicle workflow. Engine audio is an output of the same mechanical simulation
+rather than a separate authored approximation.
 
 The source boundary is deliberately lossless. Project-local sources are full
 `*.crankwave.json` documents under `crankwave-engines/`; the editor does not
@@ -33,20 +48,15 @@ mechanical curves are not yet serialized into the carrier. Until that contract
 is added, the vehicle test treats the authored clutch capacity as a drivetrain
 ceiling; it is not presented as an engine torque curve.
 
-## Install from a local checkout
+## Install in SPARQ
 
-Declare this repository as an external `file:` dependency from a SPARQ project:
+With SPARQ and SPM installed, add Crankwave directly to a project:
 
-```json
-{
-  "dependencies": {
-    "@svalchev/crankwave": "file:../../../sparq-crankwave"
-  }
-}
+```sh
+spm install @svalchev/crankwave
 ```
 
-Run `spm install` in the project, then activate the editor contribution from the
-project's `sparq.editor` entry:
+Activate the editor contribution from the project's `sparq.editor` entry:
 
 ```ts
 import { activateCrankwave } from '@svalchev/crankwave/editor';
@@ -58,10 +68,26 @@ export function activate() {
 
 The returned lease removes the package's editor contributions when disposed.
 
-Open the lab from **Window → Project Tools → Crankwave**. The lab owns
-one editor tab per project; New, Open, Save As, and project engine selection all
-happen inside that tab. Opening a `*.crankwave.json` file from Content
-focuses the same tab and loads the selected engine there.
+Open **Window → Project Tools → Crankwave**. The package uses one editor tab per
+project; New, Open, Save As, engine selection, live audition, and baking all
+happen inside that tab. Opening a `*.crankwave.json` file from Content focuses
+the same tab and loads the selected engine there.
+
+## Local package development
+
+Declare this repository as an external `file:` dependency from a SPARQ project:
+
+```json
+{
+  "dependencies": {
+    "@svalchev/crankwave": "file:../../../sparq-crankwave"
+  }
+}
+```
+
+Run `spm install` in the project to create a live development link to the local
+checkout. The activation and editor workflow are otherwise identical to the
+registry-installed package.
 
 The package declares host-provided SPARQ APIs through `workspace:^`, so SPM uses
 the APIs supplied by the active SPARQ installation.
