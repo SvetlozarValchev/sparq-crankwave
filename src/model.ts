@@ -1,14 +1,11 @@
 import { utf8Encode } from '@sparq/shared';
+import type { VehicleEngineDocument } from './authoring-contract';
 
 export const ENGINE_SOURCE_SCHEMA = 'engine-sim-offline/engine' as const;
 export const VEHICLE_ENGINE_PROJECT_DIRECTORY = 'vehicle-engines' as const;
 export const VEHICLE_ENGINE_PROJECT_SUFFIX = '.vehicle-engine.json' as const;
 export const VEHICLE_ENGINE_RUNTIME_SUFFIX = '.vehicleengine' as const;
 export const ENGINE_MAX_SOURCE_BYTES = 2 * 1024 * 1024;
-
-export type EngineJsonPrimitive = string | number | boolean | null;
-export type EngineJsonValue =
-  EngineJsonPrimitive | readonly EngineJsonValue[] | { readonly [key: string]: EngineJsonValue };
 
 export interface EngineSourceSummary {
   readonly id: string;
@@ -25,35 +22,39 @@ export interface EngineSourceSummary {
 }
 
 export interface ParsedEngineSource {
-  /** The complete parsed source. No field projection is used for persistence. */
-  readonly document: Readonly<Record<string, EngineJsonValue>>;
+  readonly document: Readonly<VehicleEngineDocument>;
   readonly summary: EngineSourceSummary;
 }
 
-function record(
-  value: unknown,
-  field: string
-): asserts value is Readonly<Record<string, EngineJsonValue>> {
+type JsonRecord = Readonly<Record<string, unknown>>;
+
+function record(value: unknown, field: string): asserts value is JsonRecord {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error(`${field} must be a JSON object`);
   }
 }
 
-function optionalText(value: EngineJsonValue | undefined): string | null {
+function rejectUnknown(value: JsonRecord, field: string, allowed: readonly string[]): void {
+  const allowedSet = new Set(allowed);
+  const unknown = Object.keys(value).filter((key) => !allowedSet.has(key));
+  if (unknown.length > 0) {
+    throw new Error(`${field} contains unsupported field '${unknown[0]}'`);
+  }
+}
+
+function optionalText(value: unknown): string | null {
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
-function arrayLength(value: EngineJsonValue | undefined): number {
+function arrayLength(value: unknown): number {
   return Array.isArray(value) ? value.length : 0;
 }
 
-function isJsonRecord(
-  value: EngineJsonValue | undefined
-): value is Readonly<Record<string, EngineJsonValue>> {
+function isJsonRecord(value: unknown): value is JsonRecord {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-function redlineRpm(engine: Readonly<Record<string, EngineJsonValue>>): number | null {
+function redlineRpm(engine: JsonRecord): number | null {
   const limits = engine.limits;
   if (!isJsonRecord(limits)) {
     return null;
@@ -65,12 +66,6 @@ function redlineRpm(engine: Readonly<Record<string, EngineJsonValue>>): number |
   return typeof redline.value === 'number' && Number.isFinite(redline.value) ? redline.value : null;
 }
 
-/**
- * Validate only the stable Engine Sim JSON envelope needed to identify a
- * source. Semantic compilation remains the authority of Engine Sim WASM;
- * duplicating its evolving schema in TypeScript would create the reduced,
- * lossy editor model this package explicitly rejects.
- */
 export function parseEngineSource(source: string): ParsedEngineSource {
   if (utf8Encode(source).byteLength > ENGINE_MAX_SOURCE_BYTES) {
     throw new Error(`Engine source exceeds ${ENGINE_MAX_SOURCE_BYTES} bytes`);
@@ -84,11 +79,57 @@ export function parseEngineSource(source: string): ParsedEngineSource {
     );
   }
   record(value, 'Engine source');
+  rejectUnknown(value, 'Engine source', ['schema', 'engine', 'presentation', 'rig']);
   if (value.schema !== ENGINE_SOURCE_SCHEMA) {
     throw new Error(`Engine source schema must be '${ENGINE_SOURCE_SCHEMA}'`);
   }
   const engineValue = value.engine;
   record(engineValue, 'engine');
+  rejectUnknown(engineValue, 'engine', [
+    'identity',
+    'cycle',
+    'layout',
+    'limits',
+    'curves',
+    'crankshafts',
+    'output_crankshaft',
+    'journals',
+    'connecting_rods',
+    'pistons',
+    'banks',
+    'intakes',
+    'exhausts',
+    'ports',
+    'cam_lobes',
+    'camshafts',
+    'valvetrains',
+    'heads',
+    'fuels',
+    'default_fuel',
+    'accessory_configurations',
+    'losses',
+    'ignition',
+    'throttle_controllers',
+    'throttle_controller',
+    'starter',
+    'cylinders',
+    'source_routes',
+  ]);
+  const presentationValue = value.presentation;
+  record(presentationValue, 'presentation');
+  rejectUnknown(presentationValue, 'presentation', [
+    'assets',
+    'cylinder_routes',
+    'routes',
+    'conditioning',
+    'buses',
+    'audition',
+    'publication_gain_linear',
+  ]);
+  if (value.rig !== undefined && value.rig !== null) {
+    record(value.rig, 'rig');
+    rejectUnknown(value.rig, 'rig', ['id', 'vehicle', 'transmission', 'dyno_defaults']);
+  }
   const identityValue = engineValue.identity;
   record(identityValue, 'engine.identity');
   const id = optionalText(identityValue.id);
@@ -112,7 +153,7 @@ export function parseEngineSource(source: string): ParsedEngineSource {
     exhaustRoutes: arrayLength(engineValue.exhausts),
     topLevelSections: Object.freeze(Object.keys(engineValue)),
   });
-  return Object.freeze({ document: value, summary });
+  return Object.freeze({ document: value as unknown as VehicleEngineDocument, summary });
 }
 
 export function formatEngineSource(source: string): string {

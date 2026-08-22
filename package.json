@@ -13,6 +13,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./model": "./src/model.ts",
+    "./authoring-contract": "./src/authoring-contract.ts",
+    "./authoring-semantics": "./src/authoring-semantics.ts",
+    "./resources": "./src/resources.ts",
+    "./runtime": "./src/runtime.ts",
     "./presets": "./src/presets.ts",
     "./document-service": "./src/document-service.ts",
     "./document-view": "./src/VehicleEngineLabDocument.tsx",

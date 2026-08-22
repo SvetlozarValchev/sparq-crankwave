@@ -15,7 +15,10 @@ export interface BakeInitializeMessage {
   readonly sharedStarterAudio: ArrayBuffer;
 }
 
-export type BakeWorkerInboundMessage = BakeInitializeMessage | { readonly type: 'dispose' };
+export type BakeWorkerInboundMessage =
+  | BakeInitializeMessage
+  | { readonly type: 'pull-chunk'; readonly index: number }
+  | { readonly type: 'dispose' };
 
 export interface BakedVehicleEngineMetadata {
   readonly engineId: string;
@@ -37,5 +40,18 @@ export type BakeWorkerOutboundMessage =
       readonly phase: 'loading' | 'baking' | 'verifying';
       readonly status: string;
     }
-  | ({ readonly type: 'complete'; readonly bytes: ArrayBuffer } & BakedVehicleEngineMetadata)
+  | {
+      readonly type: 'begin';
+      readonly chunkCount: number;
+      readonly chunkByteLimit: number;
+      readonly metadata: BakedVehicleEngineMetadata;
+    }
+  | {
+      readonly type: 'chunk';
+      readonly index: number;
+      readonly count: number;
+      readonly byteOffset: number;
+      readonly bytes: Uint8Array;
+    }
+  | { readonly type: 'complete'; readonly chunkCount: number; readonly byteCount: number }
   | { readonly type: 'error'; readonly error: string };

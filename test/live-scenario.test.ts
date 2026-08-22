@@ -14,7 +14,7 @@ describe('Vehicle Engine Lab live scenario', () => {
     const scenario = JSON.parse(program.scenarioJson) as {
       engine: string;
       fuel: string;
-      mode: { type: string };
+      mode: { type: string; initial_service_brake_application_01: number };
       rates: Record<string, { numerator: string }>;
       quality: { process_block_capacity_frames: number };
     };
@@ -22,7 +22,9 @@ describe('Vehicle Engine Lab live scenario', () => {
     expect(program.engineId).toBe(preset.id);
     expect(scenario.engine).toBe(preset.id);
     expect(scenario.fuel).toBe('regular-unleaded-gasoline');
-    expect(scenario.mode.type).toBe('free_engine');
+    expect(scenario.mode.type).toBe('free_vehicle');
+    expect(program.serviceBrakeAvailable).toBe(false);
+    expect(scenario.mode.initial_service_brake_application_01).toBe(0);
     expect(scenario.rates.physics!.numerator).toBe(String(LIVE_PHYSICS_RATE_HZ));
     expect(scenario.rates.capture!.numerator).toBe(String(LIVE_PHYSICS_RATE_HZ));
     expect(scenario.rates.source_processing!.numerator).toBe(String(LIVE_SOURCE_RATE_HZ));

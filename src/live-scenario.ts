@@ -1,4 +1,5 @@
 import { parseEngineSource } from './model';
+import { getPackageResourceBySha256 } from './resources';
 
 export const LIVE_PHYSICS_RATE_HZ = 10_000;
 export const LIVE_SOURCE_RATE_HZ = 192_000;
@@ -15,6 +16,7 @@ export interface LiveEngineProgram {
   readonly engineId: string;
   readonly scenarioJson: string;
   readonly assets: readonly VehicleEngineSourceAsset[];
+  readonly serviceBrakeAvailable: boolean;
 }
 
 type JsonRecord = Readonly<Record<string, unknown>>;
@@ -51,10 +53,6 @@ function entries(value: unknown, field: string): readonly unknown[] {
   return value;
 }
 
-function resourcePath(hash: string): string {
-  return `modules/@svalchev/vehicle-engine-lab/vendor/resources/${hash}`;
-}
-
 export function collectVehicleEngineSourceAssets(
   source: string
 ): readonly VehicleEngineSourceAsset[] {
@@ -74,7 +72,11 @@ export function collectVehicleEngineSourceAssets(
       asset.sha256,
       `engine.accessory_configurations[${index}].sha256`
     );
-    assets.push({ kind: 'accessory-configuration', id, sha256, packagePath: resourcePath(sha256) });
+    const resource = getPackageResourceBySha256(sha256);
+    if (resource.kind !== 'accessory-configuration') {
+      throw new Error(`Packaged resource '${resource.id}' is not an accessory configuration`);
+    }
+    assets.push({ kind: 'accessory-configuration', id, sha256, packagePath: resource.packagePath });
   }
 
   for (const [index, value] of entries(presentation.assets, 'presentation.assets').entries()) {
@@ -84,7 +86,11 @@ export function collectVehicleEngineSourceAssets(
     }
     const id = nonemptyText(asset.id, `presentation.assets[${index}].id`);
     const sha256 = contentHash(asset.sha256, `presentation.assets[${index}].sha256`);
-    assets.push({ kind: 'audio', id, sha256, packagePath: resourcePath(sha256) });
+    const resource = getPackageResourceBySha256(sha256);
+    if (resource.kind !== 'impulse-response') {
+      throw new Error(`Packaged resource '${resource.id}' is not an impulse response`);
+    }
+    assets.push({ kind: 'audio', id, sha256, packagePath: resource.packagePath });
   }
   return Object.freeze(assets.map((asset) => Object.freeze(asset)));
 }
@@ -106,6 +112,16 @@ export function createLiveEngineProgram(source: string): LiveEngineProgram {
   const document = parsed.document as JsonRecord;
   const engine = record(document.engine, 'engine');
   const fuel = nonemptyText(engine.default_fuel, 'engine.default_fuel');
+  const rig = record(document.rig, 'rig');
+  const rigId = nonemptyText(rig.id, 'rig.id');
+  const vehicle = record(rig.vehicle, 'rig.vehicle');
+  record(rig.transmission, 'rig.transmission');
+  const brakeCapacity = vehicle.maximum_service_brake_force;
+  const brakeCapacityValue = brakeCapacity === undefined || brakeCapacity === null
+    ? undefined
+    : record(brakeCapacity, 'rig.vehicle.maximum_service_brake_force').value;
+  const serviceBrakeAvailable =
+    typeof brakeCapacityValue === 'number' && brakeCapacityValue > 0;
   const scenario = {
     schema: 'engine-sim-offline/scenario',
     id: `${parsed.summary.id}-vehicle-engine-lab-live`,
@@ -141,7 +157,12 @@ export function createLiveEngineProgram(source: string): LiveEngineProgram {
       trailing_complete_cycle_count: 4,
     },
     mode: {
-      type: 'free_engine',
+      type: 'free_vehicle',
+      rig: rigId,
+      initial_gear: null,
+      initial_vehicle_speed: { value: 0, unit: 'm/s' },
+      initial_clutch_engagement_01: 0,
+      initial_service_brake_application_01: serviceBrakeAvailable ? 1 : 0,
       throttle_01: {
         interpolation: 'right_continuous_hold',
         points: [{ time: { value: 0, unit: 's' }, value: 0.1 }],
@@ -172,5 +193,6 @@ export function createLiveEngineProgram(source: string): LiveEngineProgram {
     engineId: parsed.summary.id,
     scenarioJson: `${JSON.stringify(scenario, null, 2)}\n`,
     assets: collectVehicleEngineSourceAssets(source),
+    serviceBrakeAvailable,
   });
 }

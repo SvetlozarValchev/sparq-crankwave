@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from '@sparq/react';
-import { Button, Checkbox, SliderRow } from '@sparq/ui-kit';
+import { Button, Checkbox, Select, SliderRow } from '@sparq/ui-kit';
 import { LiveEngineBenchController } from './live-controller';
 import styles from './VehicleEngineLabDocument.module.css';
 
@@ -20,6 +20,10 @@ export function VehicleEngineLiveBench({ source, sourceValid }: VehicleEngineLiv
     controller.getSnapshot
   );
   const active = snapshot.phase !== 'idle' && snapshot.phase !== 'failed';
+  const gearOptions = [
+    { value: '0', label: 'Neutral' },
+    ...snapshot.forwardGears.map((gear) => ({ value: String(gear.ordinal), label: `${gear.ordinal} · ${gear.id} · ${gear.ratio.toFixed(3)}:1` })),
+  ];
 
   useEffect(() => () => controller.dispose(), [controller]);
 
@@ -51,9 +55,22 @@ export function VehicleEngineLiveBench({ source, sourceValid }: VehicleEngineLiv
 
       <div className={styles.liveGrid}>
         <section className={styles.liveControls}>
-          <h3>Controls</h3>
+          <h3>Geared vehicle controls</h3>
+          <label className={styles.liveGear}><span>Forward gear</span><Select size="sm" value={String(snapshot.controls.selectedGearOrdinal)} options={gearOptions} disabled={!active || snapshot.forwardGears.length === 0} ariaLabel="Live vehicle forward gear" onChange={(gear) => controller.updateControls({ selectedGearOrdinal: Number(gear) })} /></label>
           <SliderRow
-            label="Throttle"
+            label="Clutch engagement"
+            value={snapshot.controls.clutchEngagement}
+            min={0}
+            max={1}
+            step={0.01}
+            display={`${Math.round(snapshot.controls.clutchEngagement * 100)}%`}
+            disabled={!active}
+            onChange={(clutchEngagement) => controller.updateControls({ clutchEngagement })}
+            ariaLabel="Live vehicle clutch engagement"
+            fillColor="var(--warning)"
+          />
+          <SliderRow
+            label="Accelerator"
             value={snapshot.controls.throttle}
             min={0}
             max={1}
@@ -63,6 +80,18 @@ export function VehicleEngineLiveBench({ source, sourceValid }: VehicleEngineLiv
             onChange={(throttle) => controller.updateControls({ throttle })}
             ariaLabel="Live engine throttle"
             fillColor="var(--warning)"
+          />
+          <SliderRow
+            label="Service brake"
+            value={snapshot.controls.serviceBrake}
+            min={0}
+            max={1}
+            step={0.01}
+            display={snapshot.serviceBrakeAvailable ? `${Math.round(snapshot.controls.serviceBrake * 100)}%` : '—'}
+            disabled={!active || !snapshot.serviceBrakeAvailable}
+            onChange={(serviceBrake) => controller.updateControls({ serviceBrake })}
+            ariaLabel="Live vehicle service brake"
+            fillColor="var(--accent)"
           />
           <div className={styles.liveToggles}>
             <Checkbox
@@ -93,6 +122,18 @@ export function VehicleEngineLiveBench({ source, sourceValid }: VehicleEngineLiv
         <section className={styles.outputCard}>
           <h3>Mechanical output</h3>
           <dl className={styles.liveMetrics}>
+            <div>
+              <dt>Vehicle speed</dt>
+              <dd>{number(snapshot.vehicleSpeedKmh)} km/h</dd>
+            </div>
+            <div>
+              <dt>Forward gear</dt>
+              <dd>{snapshot.controls.selectedGearOrdinal === 0 ? 'N' : snapshot.controls.selectedGearOrdinal}</dd>
+            </div>
+            <div>
+              <dt>Clutch</dt>
+              <dd>{Math.round(snapshot.controls.clutchEngagement * 100)}%</dd>
+            </div>
             <div>
               <dt>Cycle-mean torque</dt>
               <dd>{number(snapshot.torqueNm)} N·m</dd>

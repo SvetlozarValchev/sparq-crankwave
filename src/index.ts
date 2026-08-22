@@ -9,11 +9,13 @@ export {
   isVehicleEngineProjectPath,
   isVehicleEngineRuntimePath,
   parseEngineSource,
-  type EngineJsonPrimitive,
-  type EngineJsonValue,
   type EngineSourceSummary,
   type ParsedEngineSource,
 } from './model';
+export * from './authoring-contract';
+export * from './authoring-semantics';
+export * from './resources';
+export * from './runtime';
 export {
   ENGINE_PRESETS,
   getEnginePreset,

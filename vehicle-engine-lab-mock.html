@@ -1,0 +1,1493 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Vehicle Engine Lab — Panel Mock</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --editor: #090b0e;
+      --panel: #0d1014;
+      --panel-2: #11151b;
+      --field: #171c23;
+      --field-hover: #1c222b;
+      --line: #262c35;
+      --line-2: #343c48;
+      --text: #e9edf5;
+      --muted: #8c99ac;
+      --dim: #617087;
+      --violet: #8172ff;
+      --cyan: #55d5f5;
+      --orange: #ff9d3b;
+      --green: #45d7a3;
+      --danger: #ff676f;
+      --radius: 5px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--editor);
+      color: var(--text);
+      font-size: 12px;
+    }
+
+    button, input, select { font: inherit; }
+    button { color: inherit; }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background:
+        linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px),
+        var(--editor);
+      background-size: 24px 24px;
+    }
+
+    .panel {
+      display: grid;
+      grid-template-rows: 42px minmax(0, 1fr) 24px;
+      width: min(1180px, calc(100vw - 36px));
+      height: min(720px, calc(100vh - 36px));
+      min-width: 760px;
+      min-height: 520px;
+      overflow: hidden;
+      border: 1px solid var(--line-2);
+      border-radius: 7px;
+      background: var(--panel);
+      box-shadow: 0 18px 70px rgba(0,0,0,.46);
+    }
+
+    .titlebar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      padding: 6px 8px 6px 12px;
+      border-bottom: 1px solid var(--line);
+      background: #0f1217;
+    }
+
+    .title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 160px;
+      margin-right: auto;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .mark {
+      width: 9px;
+      height: 9px;
+      transform: rotate(45deg);
+      border: 1px solid var(--violet);
+      box-shadow: 0 0 10px rgba(129,114,255,.35);
+    }
+
+    .engineSelect {
+      width: min(330px, 32vw);
+    }
+
+    select, input[type="text"], input[type="number"] {
+      height: 28px;
+      min-width: 0;
+      border: 1px solid var(--line-2);
+      border-radius: var(--radius);
+      outline: none;
+      color: var(--text);
+      background: var(--field);
+      padding: 0 9px;
+    }
+
+    select:focus, input:focus { border-color: var(--violet); }
+
+    .button {
+      height: 28px;
+      flex: 0 0 auto;
+      border: 1px solid var(--line-2);
+      border-radius: var(--radius);
+      padding: 0 10px;
+      color: #dfe5ee;
+      background: var(--field);
+      cursor: pointer;
+      font-weight: 580;
+    }
+
+    .button:hover { background: var(--field-hover); }
+    .button.primary { border-color: #6f60f2; background: #6f60f2; color: white; }
+    .button.primary:hover { background: #7b6cf8; }
+    .button.icon { width: 28px; padding: 0; font-size: 16px; }
+    .button.run { border-color: rgba(69,215,163,.4); color: var(--green); }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 190px minmax(360px, 1fr) 310px;
+      min-height: 0;
+    }
+
+    .nav {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      border-right: 1px solid var(--line);
+      background: #0b0e12;
+    }
+
+    .navHeader, .benchHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 34px;
+      flex: 0 0 auto;
+      padding: 0 10px;
+      border-bottom: 1px solid var(--line);
+      color: #cfd6e2;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .navList {
+      min-height: 0;
+      overflow: auto;
+      padding: 5px;
+    }
+
+    .navItem {
+      display: grid;
+      grid-template-columns: 8px minmax(0, 1fr);
+      align-items: center;
+      gap: 7px;
+      width: 100%;
+      height: 30px;
+      border: 0;
+      border-radius: 4px;
+      padding: 0 8px;
+      text-align: left;
+      color: #9daabd;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .navItem:hover { color: var(--text); background: rgba(255,255,255,.035); }
+    .navItem.active { color: white; background: #1a2028; }
+    .navItem span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dot { width: 5px; height: 5px; border: 1px solid #58677b; border-radius: 50%; }
+    .navItem.active .dot { border: 0; background: var(--violet); box-shadow: 0 0 7px var(--violet); }
+
+    .navFooter {
+      flex: 0 0 auto;
+      padding: 8px;
+      border-top: 1px solid var(--line);
+    }
+
+    .presetButton { width: 100%; }
+
+    .definition {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      min-width: 0;
+      min-height: 0;
+      container-name: mock-editor;
+      container-type: inline-size;
+      background: var(--panel);
+    }
+
+    .definitionHeader {
+      min-width: 0;
+      padding: 12px 16px 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .definitionHeader h2 { margin: 0; font-size: 15px; font-weight: 650; }
+    .definitionHeader p { margin: 3px 0 0; color: var(--muted); line-height: 1.4; }
+
+    .formScroll {
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: scroll;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+      padding: 12px 16px 22px;
+    }
+    .formScroll::-webkit-scrollbar { width: 9px; }
+    .formScroll::-webkit-scrollbar-track { background: #0b0e12; }
+    .formScroll::-webkit-scrollbar-thumb { border: 2px solid #0b0e12; border-radius: 8px; background: #555d69; }
+
+    .group {
+      margin-bottom: 10px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #0f1318;
+    }
+
+    .groupTitle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 32px;
+      padding: 0 10px;
+      border-bottom: 1px solid var(--line);
+      color: #dce2eb;
+      font-weight: 630;
+    }
+
+    .count { color: var(--dim); font-size: 10px; font-weight: 500; }
+    .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 12px; padding: 10px; }
+    .field.wide { grid-column: 1 / -1; }
+    .field label { display: block; margin-bottom: 4px; color: #9ba8ba; font-size: 10px; }
+    .field input, .field select { width: 100%; }
+
+    .unitField { position: relative; }
+    .unitField input { padding-right: 44px; }
+    .unit {
+      position: absolute;
+      right: 9px;
+      top: 7px;
+      color: var(--dim);
+      pointer-events: none;
+      font-size: 10px;
+    }
+
+    .collection { padding: 0; }
+    .collectionRow {
+      display: grid;
+      grid-template-columns: minmax(90px, 1fr) repeat(2, minmax(62px, .55fr)) 24px;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      padding: 4px 8px 4px 10px;
+      border-bottom: 1px solid var(--line);
+    }
+    .collectionRow:last-child { border-bottom: 0; }
+    .collectionRow strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+    .collectionRow span { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .rowEdit { border: 0; color: var(--muted); background: none; cursor: pointer; font-size: 15px; }
+    .rowEdit:hover { color: white; }
+
+    .curve {
+      height: 92px;
+      margin: 0 10px 10px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background:
+        linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px),
+        #0a0d11;
+      background-size: 24px 22px;
+    }
+
+    .curve svg { width: 100%; height: 100%; overflow: visible; }
+
+    .addRow {
+      height: 29px;
+      width: 100%;
+      border: 0;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      background: rgba(255,255,255,.012);
+      cursor: pointer;
+      text-align: left;
+      padding: 0 10px;
+    }
+    .addRow:hover { color: white; background: rgba(255,255,255,.03); }
+
+    .bench {
+      display: grid;
+      grid-template-rows: 34px minmax(0, 1fr);
+      min-height: 0;
+      border-left: 1px solid var(--line);
+      background: #0b0e12;
+    }
+
+    .benchHeader .ready { display: flex; align-items: center; gap: 5px; color: var(--green); font-size: 9px; letter-spacing: 0; }
+    .readyDot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); box-shadow: 0 0 7px var(--green); }
+
+    .benchBody { min-height: 0; overflow: auto; padding: 12px; }
+    .tach { padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+    .rpmLine { display: flex; align-items: baseline; gap: 5px; }
+    .rpm { font-size: 36px; font-weight: 680; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+    .rpmUnit { color: var(--muted); font-size: 10px; text-transform: uppercase; }
+
+    .tachTrack { position: relative; height: 5px; margin-top: 10px; overflow: hidden; border-radius: 3px; background: #262c34; }
+    .tachFill { width: 11%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--cyan), var(--orange)); transition: width .2s ease; }
+    .redline { position: absolute; top: 0; bottom: 0; left: 92%; width: 2px; background: var(--danger); }
+
+    .driveStrip {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1px;
+      margin: 10px 0;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      overflow: hidden;
+      background: var(--line);
+    }
+    .driveMetric { padding: 8px; background: var(--panel-2); }
+    .driveMetric small { display: block; margin-bottom: 3px; color: var(--dim); font-size: 9px; text-transform: uppercase; }
+    .driveMetric strong { font-size: 14px; font-variant-numeric: tabular-nums; }
+    .gearValue { color: var(--orange); }
+
+    .transmission {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 12px;
+    }
+    .transmission label { color: var(--muted); font-size: 10px; }
+    .transmission select { width: 100%; }
+    .mode {
+      height: 29px;
+      border: 1px solid var(--line-2);
+      border-radius: 4px;
+      color: var(--muted);
+      background: var(--field);
+      cursor: pointer;
+    }
+    .mode.active { border-color: var(--orange); color: white; background: rgba(255,157,59,.13); }
+    .gearRail { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 10px; }
+
+    .control { margin: 10px 0 13px; }
+    .controlLabel { display: flex; justify-content: space-between; margin-bottom: 7px; color: #ccd4df; }
+    .controlLabel output { color: var(--muted); font-variant-numeric: tabular-nums; }
+    input[type="range"] { width: 100%; height: 3px; margin: 0; accent-color: var(--orange); cursor: pointer; }
+    .brake input[type="range"] { accent-color: var(--cyan); }
+
+    .switches { display: flex; gap: 7px; margin: 13px 0; }
+    .switch {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: #b7c0cd;
+      cursor: pointer;
+    }
+    .switch input { width: 13px; height: 13px; margin: 0; accent-color: var(--violet); }
+
+    .outputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-top: 1px solid var(--line);
+      border-left: 1px solid var(--line);
+      margin-top: 12px;
+    }
+    .output { padding: 8px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .output small { display: block; color: var(--dim); font-size: 9px; text-transform: uppercase; }
+    .output strong { display: block; margin-top: 3px; font-size: 12px; font-variant-numeric: tabular-nums; }
+
+    .benchActions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 12px; }
+    .hint { margin: 10px 0 0; color: var(--dim); font-size: 10px; line-height: 1.5; }
+
+    .statusbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      min-width: 0;
+      padding: 0 9px;
+      border-top: 1px solid var(--line);
+      color: var(--dim);
+      background: #090c10;
+      font-size: 9px;
+      text-transform: uppercase;
+    }
+    .statusbar .valid { color: var(--green); }
+    .path { margin-left: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 34px;
+      z-index: 10;
+      transform: translate(-50%, 16px);
+      padding: 8px 12px;
+      border: 1px solid var(--line-2);
+      border-radius: 5px;
+      opacity: 0;
+      color: #e6ebf2;
+      background: #171c23;
+      box-shadow: 0 8px 30px rgba(0,0,0,.4);
+      transition: .18s ease;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    /* Typed document editor: every value is edited where it is displayed. */
+    .rootBlock { margin-bottom: 12px; }
+    .rootBlock > .groupTitle { border: 1px solid var(--line); border-radius: 6px 6px 0 0; background: #11161c; }
+    .objectBody { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 12px; padding: 10px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 6px 6px; background: #0f1318; }
+    .objectBody > .nestedBlock, .objectBody > .arrayBlock { grid-column: 1 / -1; }
+    .editorField { min-width: 0; }
+    .editorField.wide { grid-column: 1 / -1; }
+    .editorField > label, .fieldLabel { display: block; margin-bottom: 4px; color: #9ba8ba; font-size: 10px; }
+    .editorField input:not([type="checkbox"]), .editorField select, .valueRow input, .valueRow select { width: 100%; height: 28px; }
+    .editorField textarea { width: 100%; min-height: 58px; resize: vertical; border: 1px solid var(--line-2); border-radius: var(--radius); outline: none; padding: 7px 9px; color: var(--text); background: var(--field); font: inherit; line-height: 1.4; }
+    .editorField textarea:focus { border-color: var(--violet); }
+    .checkboxField { display: flex; align-items: center; align-self: end; min-height: 28px; gap: 7px; color: #c8d0db; }
+    .checkboxField input { width: 14px; height: 14px; margin: 0; accent-color: var(--violet); }
+    .valueRow { display: grid; grid-template-columns: minmax(80px, 1fr) minmax(70px, .55fr); gap: 6px; }
+    .valueRow.withStandard { grid-template-columns: minmax(70px, 1fr) minmax(62px, .45fr) minmax(110px, .8fr); }
+    .readonlyRow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
+    .readonlyRow input { color: var(--muted); }
+    .nestedBlock, .arrayBlock { min-width: 0; border: 1px solid var(--line); border-radius: 5px; background: #0c1015; }
+    .nestedTitle, .arrayTitle { display: flex; align-items: center; justify-content: space-between; min-height: 30px; padding: 0 9px; border-bottom: 1px solid var(--line); color: #d5dce7; font-weight: 620; }
+    .nestedBody { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 12px; padding: 9px; }
+    .nestedBody > .nestedBlock, .nestedBody > .arrayBlock { grid-column: 1 / -1; }
+    .itemCard { margin: 7px; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; background: #10151b; }
+    .itemHeader { display: flex; align-items: center; justify-content: space-between; min-height: 29px; padding: 0 8px; border-bottom: 1px solid var(--line); color: #cbd4e0; }
+    .itemHeader strong { font-size: 10px; }
+    .itemBody { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 8px; }
+    .resourcePurpose { grid-column: 1 / -1; margin: 0; padding: 7px 8px; border: 1px solid rgba(85,213,245,.18); border-radius: 4px; color: #9fc8d2; background: rgba(85,213,245,.045); font-size: 10px; line-height: 1.45; }
+    .itemBody > .nestedBlock, .itemBody > .arrayBlock, .itemBody > .editorField.wide { grid-column: 1 / -1; }
+    .removeItem { width: 22px; height: 22px; border: 0; color: var(--dim); background: transparent; cursor: pointer; }
+    .removeItem:hover { color: var(--danger); }
+    .inlineList { display: grid; gap: 5px; padding: 7px; }
+    .inlineListRow { display: grid; grid-template-columns: 18px minmax(0, 1fr) 22px; align-items: center; gap: 5px; }
+    .inlineListRow > span { color: var(--dim); text-align: right; font-size: 9px; }
+    .inlineListRow select, .inlineListRow input { width: 100%; height: 27px; }
+    .arrayAdd { width: 100%; height: 28px; border: 0; border-top: 1px solid var(--line); color: var(--muted); background: rgba(255,255,255,.012); cursor: pointer; text-align: left; padding: 0 9px; }
+    .arrayAdd:hover { color: white; background: rgba(255,255,255,.03); }
+    .typedTableWrap { overflow-x: auto; }
+    .typedTable { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .typedTable th { padding: 6px; color: var(--dim); font-size: 9px; font-weight: 600; text-align: left; text-transform: uppercase; }
+    .typedTable td { padding: 4px 6px; border-top: 1px solid var(--line); vertical-align: top; }
+    .typedTable input, .typedTable select { width: 100%; height: 27px; }
+    .typedTable .indexCell { width: 30px; color: var(--dim); text-align: right; }
+    .emptyValue { height: 28px; display: flex; align-items: center; color: var(--muted); }
+
+    /* Purpose-built cylinder editor. The document shape is deliberately not the layout. */
+    .mechanismSummary { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .mechanismSummary span { padding: 4px 7px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); background: #0e1217; font-size: 10px; }
+    .mechanismSummary strong { color: var(--text); font-weight: 650; }
+    .semanticGroup { margin-bottom: 10px; overflow: hidden; border: 1px solid var(--line); border-radius: 6px; background: #0f1318; }
+    .semanticGroupHeader { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-height: 34px; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+    .semanticGroupHeader strong { color: #dce2eb; font-size: 11px; }
+    .semanticGroupHeader span { color: var(--dim); font-size: 9px; }
+    .sharedHardware { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; padding: 9px; }
+    .bankGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 8px; }
+    .bankCard { padding: 8px; border: 1px solid var(--line); border-radius: 5px; background: #0c1015; }
+    .bankCardHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .bankCardHeader strong { font-size: 11px; }
+    .bankCardHeader span { color: var(--muted); font-family: ui-monospace, monospace; font-size: 9px; }
+    .bankFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .bankFields .valueRow { grid-template-columns: minmax(42px, 1fr) 56px; }
+    .compactField label { display: block; margin-bottom: 3px; color: var(--muted); font-size: 9px; }
+    .compactField input, .compactField select { width: 100%; height: 27px; }
+    .topologyWrap { overflow-x: auto; }
+    .topology { width: 100%; min-width: 580px; border-collapse: collapse; table-layout: fixed; }
+    .topology th { padding: 6px 7px; color: var(--dim); font-size: 9px; font-weight: 600; text-align: left; text-transform: uppercase; }
+    .topology td { padding: 5px 7px; border-top: 1px solid var(--line); vertical-align: middle; }
+    .topology input, .topology select { width: 100%; height: 27px; }
+    .topology input[type="number"] { padding: 0 4px; }
+    .topology input[type="number"]::-webkit-inner-spin-button { display: none; }
+    .topology .cylinderCell { width: 86px; }
+    .topologyToolbar { display: flex; align-items: end; gap: 8px; padding: 8px; border-bottom: 1px solid var(--line); }
+    .topologyToolbar .compactField { width: 150px; }
+    .topologyToolbar .button { margin-left: auto; }
+    .cylinderIdentity { display: flex; align-items: center; gap: 6px; color: var(--text); font-weight: 620; }
+    .cylinderIdentity i { width: 6px; height: 6px; border-radius: 50%; background: var(--orange); }
+    .cylinderIdentity.even i { background: var(--cyan); }
+    .phaseCell { width: 94px; }
+    .topologyNote { margin: 0; padding: 7px 9px; border-top: 1px solid var(--line); color: var(--dim); font-size: 9px; line-height: 1.45; }
+    .semanticFields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 9px; }
+    .semanticFields.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .semanticFields.four { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .semanticFields.refs4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .semanticFields .wide { grid-column: 1 / -1; }
+    .mechanismFlow { display: flex; align-items: stretch; gap: 5px; margin-bottom: 10px; }
+    .flowNode { display: grid; place-content: center; flex: 1; min-height: 42px; padding: 6px; border: 1px solid var(--line); border-radius: 5px; color: var(--muted); background: #0e1217; text-align: center; font-size: 9px; }
+    .flowNode strong { display: block; margin-bottom: 2px; color: var(--text); font-size: 10px; }
+    .flowArrow { align-self: center; color: var(--dim); font-size: 12px; }
+    .semanticTableWrap { overflow-x: auto; }
+    .semanticTable { width: 100%; min-width: 580px; border-collapse: collapse; table-layout: fixed; }
+    .semanticTable th { padding: 6px 7px; color: var(--dim); font-size: 9px; font-weight: 600; text-align: left; text-transform: uppercase; }
+    .semanticTable td { padding: 5px 7px; border-top: 1px solid var(--line); vertical-align: middle; }
+    .semanticTable input, .semanticTable select { width: 100%; height: 27px; }
+    .semanticTable .valueRow { grid-template-columns: minmax(54px, 1fr) 50px; gap: 4px; }
+    .semanticCard .valueRow { grid-template-columns: minmax(46px, 1fr) 56px; gap: 4px; }
+    .semanticTable .rowName { overflow: hidden; color: #dce2eb; font-size: 10px; font-weight: 620; text-overflow: ellipsis; white-space: nowrap; }
+    .semanticTable .unitPair { display: grid; grid-template-columns: minmax(55px, 1fr) 64px; gap: 4px; }
+    .semanticSplit { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 8px; }
+    .semanticCard { min-width: 0; padding: 8px; border: 1px solid var(--line); border-radius: 5px; background: #0c1015; }
+    .semanticCard > strong { display: block; margin-bottom: 8px; color: #dce2eb; font-size: 10px; }
+    .semanticCard .semanticFields { padding: 0; }
+    .firingTimeline { display: grid; grid-template-columns: repeat(8, minmax(62px, 1fr)); gap: 5px; padding: 9px; }
+    .firingEvent { min-width: 0; padding: 6px; border: 1px solid var(--line); border-top: 2px solid var(--orange); border-radius: 4px; background: #0c1015; }
+    .firingEvent:nth-child(even) { border-top-color: var(--cyan); }
+    .firingEvent strong { display: block; margin-bottom: 5px; color: var(--text); font-size: 9px; text-align: center; }
+    .firingEvent select, .firingEvent input { width: 100%; height: 25px; margin-top: 4px; padding: 0 5px; font-size: 9px; }
+    .curveSummary { display: grid; grid-template-columns: minmax(150px, 1.2fr) repeat(3, minmax(90px, .7fr)); gap: 7px; padding: 8px; border-bottom: 1px solid var(--line); }
+    .curveSummary .compactField { min-width: 0; }
+    .ratioBar { position: relative; height: 5px; margin-top: 4px; border-radius: 3px; background: #242b34; }
+    .ratioBar i { display: block; height: 100%; border-radius: inherit; background: var(--violet); }
+    .capabilityNote { margin: 8px; padding: 7px 8px; border: 1px solid rgba(255,157,59,.2); border-radius: 4px; color: #c8ad8d; background: rgba(255,157,59,.045); font-size: 9px; line-height: 1.45; }
+    .strategyNote { grid-column: 1 / -1; margin: 0; padding: 7px 8px; border-left: 2px solid var(--violet); color: var(--muted); background: rgba(129,114,255,.045); font-size: 9px; line-height: 1.45; }
+    .strategyNote strong { color: #d8d3ff; }
+    .optionalControl { display: grid; align-content: start; gap: 4px; min-width: 0; padding: 7px; border: 1px dashed var(--line-2); border-radius: 4px; background: rgba(255,255,255,.012); }
+    .optionalControl label { color: var(--muted); font-size: 9px; }
+    .optionalControl small { color: var(--dim); font-size: 8px; line-height: 1.35; }
+    .optionalControl .button { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .restrictionHeader { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 8px 9px 5px; border-top: 1px solid var(--line); }
+    .restrictionHeader strong { color: #dce2eb; font-size: 10px; }
+    .restrictionHeader span { color: var(--dim); font-size: 9px; }
+    .restrictionList { display: grid; gap: 6px; padding: 0 8px 8px; }
+    .restrictionSet { display: grid; gap: 6px; }
+    .restrictionSet > strong { padding: 2px 1px 0; color: var(--muted); font-family: ui-monospace, monospace; font-size: 9px; }
+    .restrictionRow { display: grid; grid-template-columns: minmax(104px, .9fr) repeat(4, minmax(92px, 1fr)); align-items: end; gap: 7px; padding: 7px; border: 1px solid var(--line); border-radius: 5px; background: #0c1015; }
+    .restrictionRow > strong { align-self: center; min-width: 0; overflow: hidden; color: #dce2eb; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .restrictionRow .valueRow { grid-template-columns: minmax(40px, 1fr) 52px; gap: 4px; }
+    .restrictionRow .wide { grid-column: span 3; }
+    .restrictionPlaceholder { align-self: center; color: var(--dim); font-size: 9px; }
+
+    @container mock-editor (max-width: 760px) {
+      .semanticFields, .semanticFields.four, .semanticFields.refs4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .semanticSplit, .bankGrid { grid-template-columns: 1fr; }
+      .restrictionRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .restrictionRow > strong, .restrictionRow .wide { grid-column: 1 / -1; }
+      .compactField, .compactField > * { min-width: 0; max-width: 100%; }
+
+      .semanticTableWrap { overflow: visible; }
+      .semanticTable { display: block; min-width: 0; }
+      .semanticTable thead { display: none; }
+      .semanticTable tbody { display: grid; gap: 6px; padding: 6px; }
+      .semanticTable tr {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        padding: 7px;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        background: #0c1015;
+      }
+      .semanticTable td { display: block; min-width: 0; padding: 0; border: 0; }
+      .semanticTable td:first-child { grid-column: 1 / -1; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+      .semanticTable .compactField > label { display: block; }
+    }
+
+    @container mock-editor (max-width: 480px) {
+      .semanticFields, .semanticFields.two, .semanticFields.four, .semanticFields.refs4,
+      .restrictionRow, .semanticTable tr { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 940px) {
+      .workspace { grid-template-columns: 155px minmax(320px, 1fr) 270px; }
+      .engineSelect { width: 220px; }
+      .fields, .objectBody, .nestedBody { grid-template-columns: 1fr; }
+      .itemBody { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .sharedHardware, .semanticFields, .semanticFields.four, .semanticFields.refs4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .restrictionRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .restrictionRow > strong, .restrictionRow .wide { grid-column: 1 / -1; }
+      .bankGrid, .semanticSplit { grid-template-columns: 1fr; }
+      .firingTimeline { grid-template-columns: repeat(4, minmax(62px, 1fr)); }
+      .curveSummary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .mechanismFlow { flex-wrap: wrap; }
+      .flowNode { min-width: 105px; }
+      .field.wide { grid-column: auto; }
+    }
+  </style>
+</head>
+<body>
+  <section class="panel" aria-label="Vehicle Engine Lab panel mock">
+    <header class="titlebar">
+      <div class="title"><span class="mark"></span>Vehicle Engine Lab</div>
+      <select class="engineSelect" aria-label="Project vehicle engine">
+        <option>Toyota Sequoia 3UR-FE 5.7L V8</option>
+        <option>Honda K20A2 2.0L I4</option>
+        <option>Chevrolet LS3 6.2L V8</option>
+      </select>
+      <button class="button" data-toast="New engine definition">New</button>
+      <button class="button" id="save">Save</button>
+      <button class="button" id="bake">Bake</button>
+      <button class="button icon" data-toast="More engine actions" title="More actions">⋯</button>
+    </header>
+
+    <div class="workspace">
+      <aside class="nav">
+        <div class="navHeader"><span>Engine definition</span><span>●</span></div>
+        <div class="navList" id="nav"></div>
+        <div class="navFooter"><button class="button presetButton" data-toast="Choose a package preset">Import preset…</button></div>
+      </aside>
+
+      <main class="definition">
+        <header class="definitionHeader">
+          <h2 id="sectionTitle">Identity & limits</h2>
+          <p id="sectionDescription">Engine identity, cycle, layout, and operating limits.</p>
+        </header>
+        <div class="formScroll" id="sectionContent"></div>
+      </main>
+
+      <aside class="bench">
+        <div class="benchHeader">
+          <span>Live vehicle bench</span>
+          <span class="ready"><i class="readyDot"></i>10 kHz</span>
+        </div>
+        <div class="benchBody">
+          <div class="tach">
+            <div class="rpmLine"><output class="rpm" id="rpm">650</output><span class="rpmUnit">rpm</span></div>
+            <div class="tachTrack"><div class="tachFill" id="tachFill"></div><i class="redline"></i></div>
+          </div>
+
+          <div class="driveStrip">
+            <div class="driveMetric"><small>Gear</small><strong class="gearValue" id="gear">N</strong></div>
+            <div class="driveMetric"><small>Speed</small><strong id="speed">0 km/h</strong></div>
+            <div class="driveMetric"><small>Clutch</small><strong id="clutch">open</strong></div>
+          </div>
+
+          <div class="transmission" aria-label="Transmission controls">
+            <label for="gearSelect">Gear</label>
+            <select id="gearSelect" aria-label="Selected forward gear">
+              <option value="0">Neutral</option><option value="1">1 · 3.333</option><option value="2">2 · 1.960</option>
+              <option value="3">3 · 1.353</option><option value="4">4 · 1.000</option><option value="5">5 · 0.728</option><option value="6">6 · 0.588</option>
+            </select>
+          </div>
+
+          <label class="control">
+            <span class="controlLabel"><span>Clutch engagement</span><output id="clutchOut">0%</output></span>
+            <input id="clutchControl" type="range" min="0" max="100" value="0" />
+          </label>
+
+          <label class="control">
+            <span class="controlLabel"><span>Accelerator</span><output id="throttleOut">10%</output></span>
+            <input id="throttle" type="range" min="0" max="100" value="10" />
+          </label>
+          <label class="control brake">
+            <span class="controlLabel"><span>Brake</span><output id="brakeOut">0%</output></span>
+            <input id="brake" type="range" min="0" max="100" value="0" />
+          </label>
+
+          <div class="switches">
+            <label class="switch"><input type="checkbox" checked />Ignition</label>
+            <label class="switch"><input type="checkbox" checked />Fuel</label>
+            <label class="switch"><input type="checkbox" checked />Limiter</label>
+          </div>
+
+          <div class="outputs">
+            <div class="output"><small>Torque</small><strong id="torque">112 N·m</strong></div>
+            <div class="output"><small>Power</small><strong id="power">10 hp</strong></div>
+            <div class="output"><small>Audio</small><strong>48,000 Hz</strong></div>
+            <div class="output"><small>Headroom</small><strong id="headroom">74%</strong></div>
+          </div>
+
+          <div class="benchActions">
+            <button class="button primary" id="start">Start</button>
+            <button class="button" id="reset">Reset</button>
+          </div>
+          <p class="hint">The transmission, vehicle mass, drag, tires, clutch, and gear ratios come from this engine definition.</p>
+        </div>
+      </aside>
+    </div>
+
+    <footer class="statusbar">
+      <span class="valid">● Source valid</span>
+      <span id="dirtyState">Saved</span>
+      <span>WASM ready</span>
+      <span class="path">vehicle-engines/sequoia-3ur-fe.vehicle-engine.json</span>
+    </footer>
+  </section>
+
+  <div class="toast" id="toast"></div>
+
+
+  <script>
+    const sourceDocument = JSON.parse(atob('eyJzY2hlbWEiOiJlbmdpbmUtc2ltLW9mZmxpbmUvZW5naW5lIiwiZW5naW5lIjp7ImlkZW50aXR5Ijp7ImlkIjoic2VxdW9pYS0zdXItZmUtY2xlYW5yb29tIiwiZGlzcGxheV9uYW1lIjoiVG95b3RhIFNlcXVvaWEgM1VSLUZFIDUuN0wgVjggKENsZWFuIFJvb20pIiwiZGVzY3JpcHRpb24iOiJDbGVhbi1yb29tIFRveW90YSAzVVItRkUtc3R5bGUgOTAtZGVncmVlIG5hdHVyYWxseSBhc3BpcmF0ZWQgVjggYXV0aG9yZWQgZnJvbSBwdWJsaWMgZGltZW5zaW9ucyBhbmQgb3V0cHV0IHRhcmdldHMgd2l0aG91dCBhIGJyYW5kZWQgc291bmQgYXNzZXQuIFBoeXNpY2FsLCBhaXJmbG93LCBjb21idXN0aW9uLCBpZ25pdGlvbiwgZXhoYXVzdCwgc291cmNlLXByZXNlbnRhdGlvbiB2YWx1ZXMsIGFuZCB0aGUgMzAwIE4qbSBhdCAyMzAgcnBtIGNyYW5raW5nIHN0YXJ0ZXIgYXJlIHByZXNlcnZlZCBmcm9tIHRoZSBjbGVhbi1yb29tIE1SIGRlZmluaXRpb24uIFRoZSBDaGVuLUZseW5uIGxvc3NlcyBhbmQgYWNjZXNzb3J5IGRlc2NyaXB0b3IgYXJlIGN1cnJlbnQgZXhlY3V0b3IgcG9saWN5IGJlY2F1c2UgdGhlIHNvdXJjZSBkZWNsYXJlcyBubyBtZWFzdXJlZCBsb3NzIGludmVudG9yeS4gVGhlIHNvdXJjZSdzIDAuNzQ1IGtnL0wgZnVlbCBkZW5zaXR5IGlzIG5vdCBhbiBleGVjdXRvciBpbnB1dC4ifSwiY3ljbGUiOiJmb3VyX3N0cm9rZSIsImxheW91dCI6InZfZW5naW5lIiwibGltaXRzIjp7InJlZGxpbmUiOnsidmFsdWUiOjYwMDAsInVuaXQiOiJycG0ifX0sImN1cnZlcyI6W3siaWQiOiJpbnRha2UtdmFsdmUtZmxvdyIsImlucHV0X2RpbWVuc2lvbiI6Imxlbmd0aCIsIm91dHB1dF9kaW1lbnNpb24iOiJ2b2x1bWVfZmxvd19yYXRlIiwiZXZhbHVhdGlvbiI6InRyaWFuZ2xlX3dlaWdodGVkX3NhbXBsZXMiLCJ0cmlhbmdsZV9maWx0ZXJfcmFkaXVzIjp7InZhbHVlIjoxLCJ1bml0IjoibW0ifSwiYmVsb3dfZG9tYWluIjoiY2xhbXAiLCJhYm92ZV9kb21haW4iOiJjbGFtcCIsInNhbXBsZXMiOlt7ImlucHV0Ijp7InZhbHVlIjowLCJ1bml0IjoibW0ifSwib3V0cHV0Ijp7InZhbHVlIjowLCJ1bml0IjoiY2ZtIiwic3RhbmRhcmQiOiJwb3J0XzI4X2luaDJvIn19LHsiaW5wdXQiOnsidmFsdWUiOjEsInVuaXQiOiJtbSJ9LCJvdXRwdXQiOnsidmFsdWUiOjI2LjIwMDAwMDAwMDAwMDAwMywidW5pdCI6ImNmbSIsInN0YW5kYXJkIjoicG9ydF8yOF9pbmgybyJ9fSx7ImlucHV0Ijp7InZhbHVlIjoyLCJ1bml0IjoibW0ifSwib3V0cHV0Ijp7InZhbHVlIjo1Mi40MDAwMDAwMDAwMDAwMDYsInVuaXQiOiJjZm0iLCJzdGFuZGFyZCI6InBvcnRfMjhfaW5oMm8ifX0seyJpbnB1dCI6eyJ2YWx1ZSI6MywidW5pdCI6Im1tIn0sIm91dHB1dCI6eyJ2YWx1ZSI6NzguNjAwMDAwMDAwMDAwMDEsInVuaXQiOiJjZm0iLCJzdGFuZGFyZCI6InBvcnRfMjhfaW5oMm8ifX0seyJpbnB1dCI6eyJ2YWx1ZSI6NCwidW5pdCI6Im1tIn0sIm91dHB1dCI6eyJ2YWx1ZSI6MTAzLjQ5MDAwMDAwMDAwMDAxLCJ1bml0IjoiY2ZtIiwic3RhbmRhcmQiOiJwb3J0XzI4X2luaDJvIn19LHsiaW5wdXQiOnsidmFsdWUiOjUsInVuaXQiOiJtbSJ9LCJvdXRwdXQiOnsidmFsdWUiOjEyNS43NiwidW5pdCI6ImNmbSIsInN0YW5kYXJkIjoicG9ydF8yOF9pbmgybyJ9fSx7ImlucHV0Ijp7InZhbHVlIjo2LCJ1bml0IjoibW0ifSwib3V0cHV0Ijp7InZhbHVlIjoxNDQuMSwidW5pdCI6ImNmbSIsInN0YW5kYXJkIjoicG9ydF8yOF9pbmgybyJ9fSx7ImlucHV0Ijp7InZhbHVlIjo3LCJ1bml0IjoibW0ifSwib3V0cHV0Ijp7InZhbHVlIjoxNTkuODIsInVuaXQiOiJjZm0iLCJzdGFuZGFyZCI6InBvcnRfMjhfaW5oMm8ifX0seyJpbnB1dCI6eyJ2YWx1ZSI6OCwidW5pdCI6Im1tIn0sIm91dHB1dCI6eyJ2YWx1ZSI6MTcyLjI2NTAwMDAwMDAwMDAxLCJ1bml0IjoiY2ZtIiwic3RhbmRhcmQiOiJwb3J0XzI4X2luaDJvIn19LHsiaW5wdXQiOnsidmFsdWUiOjksInVuaXQiOiJtbSJ9LCJvdXRwdXQiOnsidmFsdWUiOjE4Mi4wOSwidW5pdCI6ImNmbSIsInN0YW5kYXJkIjoicG9ydF8yOF9pbmgybyJ9fSx7ImlucHV0Ijp7InZhbHVlIjoxMCwidW5pdCI6Im1tIn0sIm91dHB1dCI6eyJ2YWx1ZSI6MTg5LjI5NTAwMDAwMDAwMDAyLCJ1bml0IjoiY2ZtIiwic3RhbmRhcmQiOiJwb3J0XzI4X2luaDJvIn19LHsiaW5wdXQiOnsidmFsdWUiOjExLCJ1bml0IjoibW0ifSwib3V0cHV0Ijp7InZhbHVlIjoxOTMuODgsInVuaXQiOiJjZm0iLCJzdGFuZGFyZCI6InBvcnRfMjhfaW5oMm8ifX1dfSx7ImlkIjoiZXhoYXVzdC12YWx2ZS1mbG93IiwiaW5wdXRfZGltZW5zaW9uIjoibGVuZ3RoIiwib3V0cHV0X2RpbWVuc2lvbiI6InZvbHVtZV9mbG93X3JhdGUiLCJldmFsdWF0aW9uIjoidHJpYW5nbGVfd2VpZ2h0ZWRfc2FtcGxlcyIsInRyaWFuZ2xlX2ZpbHRlcl9yYWRpdXMiOnsidmFsdWUiOjEsInVuaXQiOiJtbSJ9LCJiZWxvd19kb21haW4iOiJjbGFtcCIsImFib3ZlX2RvbWFpbiI6ImNsYW1wIiwic2FtcGxlcyI6W3siaW5wdXQiOnsidmFsdWUiOjAsInVuaXQiOiJtbSJ9LCJvdXRwdXQiOnsidmFsdWUiOjAsInVuaXQiOiJjZm0iLCJzdGFuZGFyZCI6InBvcnRfMjhfaW5oMm8ifX0seyJpbnB1dCI6eyJ2YWx1ZSI6MSwidW5pdCI6Im1tIn0sIm91dHB1dCI6eyJ2YWx1ZSI6MjIuMjcsInVuaXQiOiJjZm0iLCJzdGFuZGFyZCI6InBvcnRfMjhfaW5oMm8ifX0seyJpbnB1dCI6eyJ2YWx1ZSI6MiwidW5pdCI6Im1tIn0sIm91dHB1dCI6eyJ2YWx1ZSI6NDQuNTQsInVuaXQiOiJjZm0iLCJzdGFuZGFyZCI6InBvcnRfMjhfaW5oMm8ifX0seyJpbnB1dCI6eyJ2YWx1ZSI6MywidW5pdCI6Im1tIn0sIm91dHB1dCI6eyJ2YWx1ZSI6NjYuMTU1LCJ1bml0IjoiY2ZtIiwic3RhbmRhcmQiOiJwb3J0XzI4X2luaDJvIn19LHsiaW5wdXQiOnsidmFsdWUiOjQsInVuaXQiOiJtbSJ9LCJvdXRwdXQiOnsidmFsdWUiOjg2LjQ2MDAwMDAwMDAwMDAxLCJ1bml0IjoiY2ZtIiwic3RhbmRhcmQiOiJwb3J0XzI4X2luaDJvIn19LHsiaW5wdXQiOnsidmFsdWUiOjUsInVuaXQiOiJtbSJ9LCJvdXRwdXQiOnsidmFsdWUiOjEwNC4xNDUwMDAwMDAwMDAwMSwidW5pdCI6ImNmbSIsInN0YW5kYXJkIjoicG9ydF8yOF9pbmgybyJ9fSx7ImlucHV0Ijp7InZhbHVlIjo2LCJ1bml0IjoibW0ifSwib3V0cHV0Ijp7InZhbHVlIjoxMTkuMjEwMDAwMDAwMDAwMDEsInVuaXQiOiJjZm0iLCJzdGFuZGFyZCI6InBvcnRfMjhfaW5oMm8ifX0seyJpbnB1dCI6eyJ2YWx1ZSI6NywidW5pdCI6Im1tIn0sIm91dHB1dCI6eyJ2YWx1ZSI6MTMxLjY1NSwidW5pdCI6ImNmbSIsInN0YW5kYXJkIjoicG9ydF8yOF9pbmgybyJ9fSx7ImlucHV0Ijp7InZhbHVlIjo4LCJ1bml0IjoibW0ifSwib3V0cHV0Ijp7InZhbHVlIjoxNDEuNDgwMDAwMDAwMDAwMDIsInVuaXQiOiJjZm0iLCJzdGFuZGFyZCI6InBvcnRfMjhfaW5oMm8ifX0seyJpbnB1dCI6eyJ2YWx1ZSI6OSwidW5pdCI6Im1tIn0sIm91dHB1dCI6eyJ2YWx1ZSI6MTQ4LjY4NSwidW5pdCI6ImNmbSIsInN0YW5kYXJkIjoicG9ydF8yOF9pbmgybyJ9fSx7ImlucHV0Ijp7InZhbHVlIjoxMCwidW5pdCI6Im1tIn0sIm91dHB1dCI6eyJ2YWx1ZSI6MTUzLjkyNSwidW5pdCI6ImNmbSIsInN0YW5kYXJkIjoicG9ydF8yOF9pbmgybyJ9fSx7ImlucHV0Ijp7InZhbHVlIjoxMSwidW5pdCI6Im1tIn0sIm91dHB1dCI6eyJ2YWx1ZSI6MTU3LjIwMDAwMDAwMDAwMDAyLCJ1bml0IjoiY2ZtIiwic3RhbmRhcmQiOiJwb3J0XzI4X2luaDJvIn19XX0seyJpZCI6Imlnbml0aW9uLXRpbWluZyIsImlucHV0X2RpbWVuc2lvbiI6ImFuZ3VsYXJfc3BlZWQiLCJvdXRwdXRfZGltZW5zaW9uIjoiYW5nbGUiLCJldmFsdWF0aW9uIjoidHJpYW5nbGVfd2VpZ2h0ZWRfc2FtcGxlcyIsInRyaWFuZ2xlX2ZpbHRlcl9yYWRpdXMiOnsidmFsdWUiOjUwMCwidW5pdCI6InJwbSJ9LCJiZWxvd19kb21haW4iOiJjbGFtcCIsImFib3ZlX2RvbWFpbiI6ImNsYW1wIiwic2FtcGxlcyI6W3siaW5wdXQiOnsidmFsdWUiOjAsInVuaXQiOiJycG0ifSwib3V0cHV0Ijp7InZhbHVlIjowLCJ1bml0IjoiZGVnIn19LHsiaW5wdXQiOnsidmFsdWUiOjY1MCwidW5pdCI6InJwbSJ9LCJvdXRwdXQiOnsidmFsdWUiOjYsInVuaXQiOiJkZWcifX0seyJpbnB1dCI6eyJ2YWx1ZSI6MTAwMCwidW5pdCI6InJwbSJ9LCJvdXRwdXQiOnsidmFsdWUiOjEyLCJ1bml0IjoiZGVnIn19LHsiaW5wdXQiOnsidmFsdWUiOjE1MDAsInVuaXQiOiJycG0ifSwib3V0cHV0Ijp7InZhbHVlIjoxNywidW5pdCI6ImRlZyJ9fSx7ImlucHV0Ijp7InZhbHVlIjoyMjAwLCJ1bml0IjoicnBtIn0sIm91dHB1dCI6eyJ2YWx1ZSI6MjIsInVuaXQiOiJkZWcifX0seyJpbnB1dCI6eyJ2YWx1ZSI6MzAwMCwidW5pdCI6InJwbSJ9LCJvdXRwdXQiOnsidmFsdWUiOjI1LCJ1bml0IjoiZGVnIn19LHsiaW5wdXQiOnsidmFsdWUiOjM2MDAsInVuaXQiOiJycG0ifSwib3V0cHV0Ijp7InZhbHVlIjoyNywidW5pdCI6ImRlZyJ9fSx7ImlucHV0Ijp7InZhbHVlIjo0NTAwLCJ1bml0IjoicnBtIn0sIm91dHB1dCI6eyJ2YWx1ZSI6MjksInVuaXQiOiJkZWcifX0seyJpbnB1dCI6eyJ2YWx1ZSI6NTIwMCwidW5pdCI6InJwbSJ9LCJvdXRwdXQiOnsidmFsdWUiOjMxLCJ1bml0IjoiZGVnIn19LHsiaW5wdXQiOnsidmFsdWUiOjU2MDAsInVuaXQiOiJycG0ifSwib3V0cHV0Ijp7InZhbHVlIjozMiwidW5pdCI6ImRlZyJ9fSx7ImlucHV0Ijp7InZhbHVlIjo2MDAwLCJ1bml0IjoicnBtIn0sIm91dHB1dCI6eyJ2YWx1ZSI6MzEsInVuaXQiOiJkZWcifX1dfSx7ImlkIjoidHVyYnVsZW5jZS10by1mbGFtZS1zcGVlZCIsImlucHV0X2RpbWVuc2lvbiI6ImRpbWVuc2lvbmxlc3MiLCJvdXRwdXRfZGltZW5zaW9uIjoic3BlZWQiLCJldmFsdWF0aW9uIjoidHJpYW5nbGVfd2VpZ2h0ZWRfc2FtcGxlcyIsInRyaWFuZ2xlX2ZpbHRlcl9yYWRpdXMiOnsidmFsdWUiOjUsInVuaXQiOiIxIn0sImJlbG93X2RvbWFpbiI6ImNsYW1wIiwiYWJvdmVfZG9tYWluIjoiY2xhbXAiLCJzYW1wbGVzIjpbeyJpbnB1dCI6eyJ2YWx1ZSI6MCwidW5pdCI6IjEifSwib3V0cHV0Ijp7InZhbHVlIjozLCJ1bml0IjoibS9zIn19LHsiaW5wdXQiOnsidmFsdWUiOjUsInVuaXQiOiIxIn0sIm91dHB1dCI6eyJ2YWx1ZSI6Ny41LCJ1bml0IjoibS9zIn19LHsiaW5wdXQiOnsidmFsdWUiOjEwLCJ1bml0IjoiMSJ9LCJvdXRwdXQiOnsidmFsdWUiOjE1LCJ1bml0IjoibS9zIn19LHsiaW5wdXQiOnsidmFsdWUiOjE1LCJ1bml0IjoiMSJ9LCJvdXRwdXQiOnsidmFsdWUiOjIyLjUsInVuaXQiOiJtL3MifX0seyJpbnB1dCI6eyJ2YWx1ZSI6MjAsInVuaXQiOiIxIn0sIm91dHB1dCI6eyJ2YWx1ZSI6MzAsInVuaXQiOiJtL3MifX0seyJpbnB1dCI6eyJ2YWx1ZSI6MjUsInVuaXQiOiIxIn0sIm91dHB1dCI6eyJ2YWx1ZSI6MzcuNSwidW5pdCI6Im0vcyJ9fSx7ImlucHV0Ijp7InZhbHVlIjozMCwidW5pdCI6IjEifSwib3V0cHV0Ijp7InZhbHVlIjo0NSwidW5pdCI6Im0vcyJ9fSx7ImlucHV0Ijp7InZhbHVlIjozNSwidW5pdCI6IjEifSwib3V0cHV0Ijp7InZhbHVlIjo1Mi41LCJ1bml0IjoibS9zIn19LHsiaW5wdXQiOnsidmFsdWUiOjQwLCJ1bml0IjoiMSJ9LCJvdXRwdXQiOnsidmFsdWUiOjYwLCJ1bml0IjoibS9zIn19LHsiaW5wdXQiOnsidmFsdWUiOjQ1LCJ1bml0IjoiMSJ9LCJvdXRwdXQiOnsidmFsdWUiOjY3LjUsInVuaXQiOiJtL3MifX1dfV0sImNyYW5rc2hhZnRzIjpbeyJpZCI6ImNyYW5rIiwidGhyb3dfcmFkaXVzIjp7InZhbHVlIjo1MSwidW5pdCI6Im1tIn0sIm1hc3MiOnsidmFsdWUiOjI3LCJ1bml0Ijoia2cifSwiZmx5d2hlZWxfbWFzcyI6eyJ2YWx1ZSI6NywidW5pdCI6ImtnIn0sIm1vbWVudF9vZl9pbmVydGlhIjp7InZhbHVlIjowLjQwODEzNDYsInVuaXQiOiJrZyptMiJ9LCJmcmljdGlvbl90b3JxdWUiOnsidmFsdWUiOjIyLCJ1bml0IjoibGIqZnQifSwidGRjX3JlZmVyZW5jZV9hbmdsZSI6eyJ2YWx1ZSI6NDUsInVuaXQiOiJkZWcifX1dLCJvdXRwdXRfY3JhbmtzaGFmdCI6ImNyYW5rIiwiam91cm5hbHMiOlt7ImlkIjoiam91cm5hbC0xMiIsInR5cGUiOiJjcmFua3NoYWZ0IiwiY3JhbmtzaGFmdCI6ImNyYW5rIiwicGhhc2UiOnsidmFsdWUiOjAsInVuaXQiOiJkZWcifX0seyJpZCI6ImpvdXJuYWwtMzQiLCJ0eXBlIjoiY3JhbmtzaGFmdCIsImNyYW5rc2hhZnQiOiJjcmFuayIsInBoYXNlIjp7InZhbHVlIjoyNzAsInVuaXQiOiJkZWcifX0seyJpZCI6ImpvdXJuYWwtNTYiLCJ0eXBlIjoiY3JhbmtzaGFmdCIsImNyYW5rc2hhZnQiOiJjcmFuayIsInBoYXNlIjp7InZhbHVlIjo5MCwidW5pdCI6ImRlZyJ9fSx7ImlkIjoiam91cm5hbC03OCIsInR5cGUiOiJjcmFua3NoYWZ0IiwiY3JhbmtzaGFmdCI6ImNyYW5rIiwicGhhc2UiOnsidmFsdWUiOjE4MCwidW5pdCI6ImRlZyJ9fV0sImNvbm5lY3Rpbmdfcm9kcyI6W3siaWQiOiJyb2QiLCJsZW5ndGgiOnsidmFsdWUiOjE2NC41LCJ1bml0IjoibW0ifSwibWFzcyI6eyJ2YWx1ZSI6MC42MjQsInVuaXQiOiJrZyJ9LCJtb21lbnRfb2ZfaW5lcnRpYSI6eyJ2YWx1ZSI6MC4wMDE0MDcxMzMwMDAwMDAwMDAzLCJ1bml0Ijoia2cqbTIifX1dLCJwaXN0b25zIjpbeyJpZCI6InBpc3RvbiIsIm1hc3MiOnsidmFsdWUiOjAuNDgsInVuaXQiOiJrZyJ9LCJjb21wcmVzc2lvbl9oZWlnaHQiOnsidmFsdWUiOjMxLCJ1bml0IjoibW0ifSwiZGlzcGxhY2VtZW50X3ZvbHVtZSI6eyJ2YWx1ZSI6MCwidW5pdCI6ImNtMyJ9LCJibG93YnkiOnsidHlwZSI6ImZsb3dfYmVuY2giLCJyYXRlZF9mbG93Ijp7InZhbHVlIjowLjAxNiwidW5pdCI6ImNmbSIsInN0YW5kYXJkIjoicG9ydF8yOF9pbmgybyJ9LCJwcmVzc3VyZV9kcm9wIjp7InZhbHVlIjoyOCwidW5pdCI6ImluSDJPIn19fV0sImJhbmtzIjpbeyJpZCI6ImJhbmsub2RkIiwiYW5nbGUiOnsidmFsdWUiOi00NSwidW5pdCI6ImRlZyJ9LCJib3JlIjp7InZhbHVlIjo5NCwidW5pdCI6Im1tIn0sImRlY2tfaGVpZ2h0Ijp7InZhbHVlIjoyNDYuNSwidW5pdCI6Im1tIn0sImhlYWQiOiJoZWFkIn0seyJpZCI6ImJhbmsuZXZlbiIsImFuZ2xlIjp7InZhbHVlIjo0NSwidW5pdCI6ImRlZyJ9LCJib3JlIjp7InZhbHVlIjo5NCwidW5pdCI6Im1tIn0sImRlY2tfaGVpZ2h0Ijp7InZhbHVlIjoyNDYuNSwidW5pdCI6Im1tIn0sImhlYWQiOiJoZWFkIn1dLCJpbnRha2VzIjpbeyJpZCI6ImludGFrZSIsInBsZW51bV92b2x1bWUiOnsidmFsdWUiOjUuNywidW5pdCI6IkwifSwicGxlbnVtX2Nyb3NzX3NlY3Rpb25fYXJlYSI6eyJ2YWx1ZSI6MzYsInVuaXQiOiJjbTIifSwicnVubmVyX2xlbmd0aCI6eyJ2YWx1ZSI6MjEwLCJ1bml0IjoibW0ifSwibWFpbl9yZXN0cmljdGlvbiI6eyJ0eXBlIjoiZmxvd19iZW5jaCIsInJhdGVkX2Zsb3ciOnsidmFsdWUiOjk1MCwidW5pdCI6ImNmbSIsInN0YW5kYXJkIjoiY2FyYnVyZXRvcl8xcDVfaW5oZyJ9LCJwcmVzc3VyZV9kcm9wIjp7InZhbHVlIjoxLjUsInVuaXQiOiJpbkhnIn19LCJpZGxlX2J5cGFzc19yZXN0cmljdGlvbiI6eyJ0eXBlIjoiZmxvd19iZW5jaCIsInJhdGVkX2Zsb3ciOnsidmFsdWUiOjAsInVuaXQiOiJjZm0iLCJzdGFuZGFyZCI6ImNhcmJ1cmV0b3JfMXA1X2luaGcifSwicHJlc3N1cmVfZHJvcCI6eyJ2YWx1ZSI6MS41LCJ1bml0IjoiaW5IZyJ9fSwicnVubmVyX3Jlc3RyaWN0aW9uIjp7InR5cGUiOiJmbG93X2JlbmNoIiwicmF0ZWRfZmxvdyI6eyJ2YWx1ZSI6Mjg1LCJ1bml0IjoiY2ZtIiwic3RhbmRhcmQiOiJjYXJidXJldG9yXzFwNV9pbmhnIn0sInByZXNzdXJlX2Ryb3AiOnsidmFsdWUiOjEuNSwidW5pdCI6ImluSGcifX0sImlkbGVfdGhyb3R0bGVfcG9zaXRpb25fMDEiOjAuOTk3LCJydW5uZXJfdmVsb2NpdHlfZGVjYXlfMDEiOjAuNTIsIm1haW5fbWl4dHVyZV9sYW1iZGEiOjAuOH1dLCJleGhhdXN0cyI6W3siaWQiOiJleGhhdXN0Lm9kZCIsImNvbGxlY3Rvcl9jcm9zc19zZWN0aW9uX2FyZWEiOnsidmFsdWUiOjAuMDAzNjMxNjgxMTA3NTUwMDQwNCwidW5pdCI6Im0yIn0sImNvbGxlY3Rvcl9sZW5ndGgiOnsidmFsdWUiOjMuNTUsInVuaXQiOiJtIn0sInByaW1hcnlfdHViZV9sZW5ndGgiOnsidmFsdWUiOjQzMCwidW5pdCI6Im1tIn0sIm91dGxldF9yZXN0cmljdGlvbiI6eyJ0eXBlIjoiZmxvd19iZW5jaCIsInJhdGVkX2Zsb3ciOnsidmFsdWUiOjYyMCwidW5pdCI6ImNmbSIsInN0YW5kYXJkIjoiY2FyYnVyZXRvcl8xcDVfaW5oZyJ9LCJwcmVzc3VyZV9kcm9wIjp7InZhbHVlIjoxLjUsInVuaXQiOiJpbkhnIn19LCJwcmltYXJ5X3Jlc3RyaWN0aW9uIjp7InR5cGUiOiJmbG93X2JlbmNoIiwicmF0ZWRfZmxvdyI6eyJ2YWx1ZSI6MjQ1LCJ1bml0IjoiY2ZtIiwic3RhbmRhcmQiOiJjYXJidXJldG9yXzFwNV9pbmhnIn0sInByZXNzdXJlX2Ryb3AiOnsidmFsdWUiOjEuNSwidW5pdCI6ImluSGcifX0sInZlbG9jaXR5X2RlY2F5XzAxIjowLjc2fSx7ImlkIjoiZXhoYXVzdC5ldmVuIiwiY29sbGVjdG9yX2Nyb3NzX3NlY3Rpb25fYXJlYSI6eyJ2YWx1ZSI6MC4wMDM2MzE2ODExMDc1NTAwNDA0LCJ1bml0IjoibTIifSwiY29sbGVjdG9yX2xlbmd0aCI6eyJ2YWx1ZSI6My42OSwidW5pdCI6Im0ifSwicHJpbWFyeV90dWJlX2xlbmd0aCI6eyJ2YWx1ZSI6NDMwLCJ1bml0IjoibW0ifSwib3V0bGV0X3Jlc3RyaWN0aW9uIjp7InR5cGUiOiJmbG93X2JlbmNoIiwicmF0ZWRfZmxvdyI6eyJ2YWx1ZSI6NjIwLCJ1bml0IjoiY2ZtIiwic3RhbmRhcmQiOiJjYXJidXJldG9yXzFwNV9pbmhnIn0sInByZXNzdXJlX2Ryb3AiOnsidmFsdWUiOjEuNSwidW5pdCI6ImluSGcifX0sInByaW1hcnlfcmVzdHJpY3Rpb24iOnsidHlwZSI6ImZsb3dfYmVuY2giLCJyYXRlZF9mbG93Ijp7InZhbHVlIjoyNDUsInVuaXQiOiJjZm0iLCJzdGFuZGFyZCI6ImNhcmJ1cmV0b3JfMXA1X2luaGcifSwicHJlc3N1cmVfZHJvcCI6eyJ2YWx1ZSI6MS41LCJ1bml0IjoiaW5IZyJ9fSwidmVsb2NpdHlfZGVjYXlfMDEiOjAuNzZ9XSwicG9ydHMiOlt7ImlkIjoiaW50YWtlLXBvcnQiLCJoZWFkIjoiaGVhZCIsImtpbmQiOiJpbnRha2UiLCJydW5uZXJfdm9sdW1lIjp7InZhbHVlIjoyMjAsInVuaXQiOiJjbTMifSwicnVubmVyX2Nyb3NzX3NlY3Rpb25fYXJlYSI6eyJ2YWx1ZSI6MTcsInVuaXQiOiJjbTIifSwiZmxvd19jdXJ2ZSI6ImludGFrZS12YWx2ZS1mbG93In0seyJpZCI6ImV4aGF1c3QtcG9ydCIsImhlYWQiOiJoZWFkIiwia2luZCI6ImV4aGF1c3QiLCJydW5uZXJfdm9sdW1lIjp7InZhbHVlIjoxMzIsInVuaXQiOiJjbTMifSwicnVubmVyX2Nyb3NzX3NlY3Rpb25fYXJlYSI6eyJ2YWx1ZSI6MTEuMiwidW5pdCI6ImNtMiJ9LCJmbG93X2N1cnZlIjoiZXhoYXVzdC12YWx2ZS1mbG93In1dLCJjYW1fbG9iZXMiOlt7ImlkIjoiaW50YWtlLWxvYmUtMSIsImN5bGluZGVyIjoiY3lsaW5kZXItMSIsInBvcnRfa2luZCI6ImludGFrZSIsImNlbnRlcmxpbmUiOnsidmFsdWUiOjguMTE1NzgxMDIxNzc0MTY3LCJ1bml0IjoicmFkIn0sInR5cGUiOiJoYXJtb25pYyIsImR1cmF0aW9uX2F0X3JlZmVyZW5jZV9saWZ0Ijp7InZhbHVlIjoyMTgsInVuaXQiOiJkZWcifSwicmVmZXJlbmNlX2xpZnQiOnsidmFsdWUiOjAuMDAxMjcsInVuaXQiOiJtIn0sIm1heGltdW1fbGlmdCI6eyJ2YWx1ZSI6MTAuOSwidW5pdCI6Im1tIn0sImdhbW1hIjowLjksInNhbXBsZV9jb3VudCI6MjU2fSx7ImlkIjoiaW50YWtlLWxvYmUtMyIsImN5bGluZGVyIjoiY3lsaW5kZXItMyIsInBvcnRfa2luZCI6ImludGFrZSIsImNlbnRlcmxpbmUiOnsidmFsdWUiOjEyLjgyODE3MDAwMjE1OTE2NSwidW5pdCI6InJhZCJ9LCJ0eXBlIjoiaGFybW9uaWMiLCJkdXJhdGlvbl9hdF9yZWZlcmVuY2VfbGlmdCI6eyJ2YWx1ZSI6MjE4LCJ1bml0IjoiZGVnIn0sInJlZmVyZW5jZV9saWZ0Ijp7InZhbHVlIjowLjAwMTI3LCJ1bml0IjoibSJ9LCJtYXhpbXVtX2xpZnQiOnsidmFsdWUiOjEwLjksInVuaXQiOiJtbSJ9LCJnYW1tYSI6MC45LCJzYW1wbGVfY291bnQiOjI1Nn0seyJpZCI6ImludGFrZS1sb2JlLTUiLCJjeWxpbmRlciI6ImN5bGluZGVyLTUiLCJwb3J0X2tpbmQiOiJpbnRha2UiLCJjZW50ZXJsaW5lIjp7InZhbHVlIjoxNS45Njk3NjI2NTU3NDkxNjYsInVuaXQiOiJyYWQifSwidHlwZSI6Imhhcm1vbmljIiwiZHVyYXRpb25fYXRfcmVmZXJlbmNlX2xpZnQiOnsidmFsdWUiOjIxOCwidW5pdCI6ImRlZyJ9LCJyZWZlcmVuY2VfbGlmdCI6eyJ2YWx1ZSI6MC4wMDEyNywidW5pdCI6Im0ifSwibWF4aW11bV9saWZ0Ijp7InZhbHVlIjoxMC45LCJ1bml0IjoibW0ifSwiZ2FtbWEiOjAuOSwic2FtcGxlX2NvdW50IjoyNTZ9LHsiaWQiOiJpbnRha2UtbG9iZS03IiwiY3lsaW5kZXIiOiJjeWxpbmRlci03IiwicG9ydF9raW5kIjoiaW50YWtlIiwiY2VudGVybGluZSI6eyJ2YWx1ZSI6MTEuMjU3MzczNjc1MzY0MTY4LCJ1bml0IjoicmFkIn0sInR5cGUiOiJoYXJtb25pYyIsImR1cmF0aW9uX2F0X3JlZmVyZW5jZV9saWZ0Ijp7InZhbHVlIjoyMTgsInVuaXQiOiJkZWcifSwicmVmZXJlbmNlX2xpZnQiOnsidmFsdWUiOjAuMDAxMjcsInVuaXQiOiJtIn0sIm1heGltdW1fbGlmdCI6eyJ2YWx1ZSI6MTAuOSwidW5pdCI6Im1tIn0sImdhbW1hIjowLjksInNhbXBsZV9jb3VudCI6MjU2fSx7ImlkIjoiaW50YWtlLWxvYmUtMiIsImN5bGluZGVyIjoiY3lsaW5kZXItMiIsInBvcnRfa2luZCI6ImludGFrZSIsImNlbnRlcmxpbmUiOnsidmFsdWUiOjE5LjExMTM1NTMwOTMzOTE2NywidW5pdCI6InJhZCJ9LCJ0eXBlIjoiaGFybW9uaWMiLCJkdXJhdGlvbl9hdF9yZWZlcmVuY2VfbGlmdCI6eyJ2YWx1ZSI6MjE4LCJ1bml0IjoiZGVnIn0sInJlZmVyZW5jZV9saWZ0Ijp7InZhbHVlIjowLjAwMTI3LCJ1bml0IjoibSJ9LCJtYXhpbXVtX2xpZnQiOnsidmFsdWUiOjEwLjksInVuaXQiOiJtbSJ9LCJnYW1tYSI6MC45LCJzYW1wbGVfY291bnQiOjI1Nn0seyJpZCI6ImludGFrZS1sb2JlLTQiLCJjeWxpbmRlciI6ImN5bGluZGVyLTQiLCJwb3J0X2tpbmQiOiJpbnRha2UiLCJjZW50ZXJsaW5lIjp7InZhbHVlIjoxNy41NDA1NTg5ODI1NDQxNjYsInVuaXQiOiJyYWQifSwidHlwZSI6Imhhcm1vbmljIiwiZHVyYXRpb25fYXRfcmVmZXJlbmNlX2xpZnQiOnsidmFsdWUiOjIxOCwidW5pdCI6ImRlZyJ9LCJyZWZlcmVuY2VfbGlmdCI6eyJ2YWx1ZSI6MC4wMDEyNywidW5pdCI6Im0ifSwibWF4aW11bV9saWZ0Ijp7InZhbHVlIjoxMC45LCJ1bml0IjoibW0ifSwiZ2FtbWEiOjAuOSwic2FtcGxlX2NvdW50IjoyNTZ9LHsiaWQiOiJpbnRha2UtbG9iZS02IiwiY3lsaW5kZXIiOiJjeWxpbmRlci02IiwicG9ydF9raW5kIjoiaW50YWtlIiwiY2VudGVybGluZSI6eyJ2YWx1ZSI6MTQuMzk4OTY2MzI4OTU0MTY3LCJ1bml0IjoicmFkIn0sInR5cGUiOiJoYXJtb25pYyIsImR1cmF0aW9uX2F0X3JlZmVyZW5jZV9saWZ0Ijp7InZhbHVlIjoyMTgsInVuaXQiOiJkZWcifSwicmVmZXJlbmNlX2xpZnQiOnsidmFsdWUiOjAuMDAxMjcsInVuaXQiOiJtIn0sIm1heGltdW1fbGlmdCI6eyJ2YWx1ZSI6MTAuOSwidW5pdCI6Im1tIn0sImdhbW1hIjowLjksInNhbXBsZV9jb3VudCI6MjU2fSx7ImlkIjoiaW50YWtlLWxvYmUtOCIsImN5bGluZGVyIjoiY3lsaW5kZXItOCIsInBvcnRfa2luZCI6ImludGFrZSIsImNlbnRlcmxpbmUiOnsidmFsdWUiOjkuNjg2NTc3MzQ4NTY5MTY2LCJ1bml0IjoicmFkIn0sInR5cGUiOiJoYXJtb25pYyIsImR1cmF0aW9uX2F0X3JlZmVyZW5jZV9saWZ0Ijp7InZhbHVlIjoyMTgsInVuaXQiOiJkZWcifSwicmVmZXJlbmNlX2xpZnQiOnsidmFsdWUiOjAuMDAxMjcsInVuaXQiOiJtIn0sIm1heGltdW1fbGlmdCI6eyJ2YWx1ZSI6MTAuOSwidW5pdCI6Im1tIn0sImdhbW1hIjowLjksInNhbXBsZV9jb3VudCI6MjU2fSx7ImlkIjoiZXhoYXVzdC1sb2JlLTEiLCJjeWxpbmRlciI6ImN5bGluZGVyLTEiLCJwb3J0X2tpbmQiOiJleGhhdXN0IiwiY2VudGVybGluZSI6eyJ2YWx1ZSI6NC4zNjMzMjMxMjk5ODYxMTEsInVuaXQiOiJyYWQifSwidHlwZSI6Imhhcm1vbmljIiwiZHVyYXRpb25fYXRfcmVmZXJlbmNlX2xpZnQiOnsidmFsdWUiOjIxMCwidW5pdCI6ImRlZyJ9LCJyZWZlcmVuY2VfbGlmdCI6eyJ2YWx1ZSI6MC4wMDEyNywidW5pdCI6Im0ifSwibWF4aW11bV9saWZ0Ijp7InZhbHVlIjoxMC45LCJ1bml0IjoibW0ifSwiZ2FtbWEiOjAuOSwic2FtcGxlX2NvdW50IjoyNTZ9LHsiaWQiOiJleGhhdXN0LWxvYmUtMyIsImN5bGluZGVyIjoiY3lsaW5kZXItMyIsInBvcnRfa2luZCI6ImV4aGF1c3QiLCJjZW50ZXJsaW5lIjp7InZhbHVlIjo5LjA3NTcxMjExMDM3MTExLCJ1bml0IjoicmFkIn0sInR5cGUiOiJoYXJtb25pYyIsImR1cmF0aW9uX2F0X3JlZmVyZW5jZV9saWZ0Ijp7InZhbHVlIjoyMTAsInVuaXQiOiJkZWcifSwicmVmZXJlbmNlX2xpZnQiOnsidmFsdWUiOjAuMDAxMjcsInVuaXQiOiJtIn0sIm1heGltdW1fbGlmdCI6eyJ2YWx1ZSI6MTAuOSwidW5pdCI6Im1tIn0sImdhbW1hIjowLjksInNhbXBsZV9jb3VudCI6MjU2fSx7ImlkIjoiZXhoYXVzdC1sb2JlLTUiLCJjeWxpbmRlciI6ImN5bGluZGVyLTUiLCJwb3J0X2tpbmQiOiJleGhhdXN0IiwiY2VudGVybGluZSI6eyJ2YWx1ZSI6MTIuMjE3MzA0NzYzOTYxMTEsInVuaXQiOiJyYWQifSwidHlwZSI6Imhhcm1vbmljIiwiZHVyYXRpb25fYXRfcmVmZXJlbmNlX2xpZnQiOnsidmFsdWUiOjIxMCwidW5pdCI6ImRlZyJ9LCJyZWZlcmVuY2VfbGlmdCI6eyJ2YWx1ZSI6MC4wMDEyNywidW5pdCI6Im0ifSwibWF4aW11bV9saWZ0Ijp7InZhbHVlIjoxMC45LCJ1bml0IjoibW0ifSwiZ2FtbWEiOjAuOSwic2FtcGxlX2NvdW50IjoyNTZ9LHsiaWQiOiJleGhhdXN0LWxvYmUtNyIsImN5bGluZGVyIjoiY3lsaW5kZXItNyIsInBvcnRfa2luZCI6ImV4aGF1c3QiLCJjZW50ZXJsaW5lIjp7InZhbHVlIjo3LjUwNDkxNTc4MzU3NjExMSwidW5pdCI6InJhZCJ9LCJ0eXBlIjoiaGFybW9uaWMiLCJkdXJhdGlvbl9hdF9yZWZlcmVuY2VfbGlmdCI6eyJ2YWx1ZSI6MjEwLCJ1bml0IjoiZGVnIn0sInJlZmVyZW5jZV9saWZ0Ijp7InZhbHVlIjowLjAwMTI3LCJ1bml0IjoibSJ9LCJtYXhpbXVtX2xpZnQiOnsidmFsdWUiOjEwLjksInVuaXQiOiJtbSJ9LCJnYW1tYSI6MC45LCJzYW1wbGVfY291bnQiOjI1Nn0seyJpZCI6ImV4aGF1c3QtbG9iZS0yIiwiY3lsaW5kZXIiOiJjeWxpbmRlci0yIiwicG9ydF9raW5kIjoiZXhoYXVzdCIsImNlbnRlcmxpbmUiOnsidmFsdWUiOjE1LjM1ODg5NzQxNzU1MTEwOSwidW5pdCI6InJhZCJ9LCJ0eXBlIjoiaGFybW9uaWMiLCJkdXJhdGlvbl9hdF9yZWZlcmVuY2VfbGlmdCI6eyJ2YWx1ZSI6MjEwLCJ1bml0IjoiZGVnIn0sInJlZmVyZW5jZV9saWZ0Ijp7InZhbHVlIjowLjAwMTI3LCJ1bml0IjoibSJ9LCJtYXhpbXVtX2xpZnQiOnsidmFsdWUiOjEwLjksInVuaXQiOiJtbSJ9LCJnYW1tYSI6MC45LCJzYW1wbGVfY291bnQiOjI1Nn0seyJpZCI6ImV4aGF1c3QtbG9iZS00IiwiY3lsaW5kZXIiOiJjeWxpbmRlci00IiwicG9ydF9raW5kIjoiZXhoYXVzdCIsImNlbnRlcmxpbmUiOnsidmFsdWUiOjEzLjc4ODEwMTA5MDc1NjExMSwidW5pdCI6InJhZCJ9LCJ0eXBlIjoiaGFybW9uaWMiLCJkdXJhdGlvbl9hdF9yZWZlcmVuY2VfbGlmdCI6eyJ2YWx1ZSI6MjEwLCJ1bml0IjoiZGVnIn0sInJlZmVyZW5jZV9saWZ0Ijp7InZhbHVlIjowLjAwMTI3LCJ1bml0IjoibSJ9LCJtYXhpbXVtX2xpZnQiOnsidmFsdWUiOjEwLjksInVuaXQiOiJtbSJ9LCJnYW1tYSI6MC45LCJzYW1wbGVfY291bnQiOjI1Nn0seyJpZCI6ImV4aGF1c3QtbG9iZS02IiwiY3lsaW5kZXIiOiJjeWxpbmRlci02IiwicG9ydF9raW5kIjoiZXhoYXVzdCIsImNlbnRlcmxpbmUiOnsidmFsdWUiOjEwLjY0NjUwODQzNzE2NjExMiwidW5pdCI6InJhZCJ9LCJ0eXBlIjoiaGFybW9uaWMiLCJkdXJhdGlvbl9hdF9yZWZlcmVuY2VfbGlmdCI6eyJ2YWx1ZSI6MjEwLCJ1bml0IjoiZGVnIn0sInJlZmVyZW5jZV9saWZ0Ijp7InZhbHVlIjowLjAwMTI3LCJ1bml0IjoibSJ9LCJtYXhpbXVtX2xpZnQiOnsidmFsdWUiOjEwLjksInVuaXQiOiJtbSJ9LCJnYW1tYSI6MC45LCJzYW1wbGVfY291bnQiOjI1Nn0seyJpZCI6ImV4aGF1c3QtbG9iZS04IiwiY3lsaW5kZXIiOiJjeWxpbmRlci04IiwicG9ydF9raW5kIjoiZXhoYXVzdCIsImNlbnRlcmxpbmUiOnsidmFsdWUiOjUuOTM0MTE5NDU2NzgxMTExNSwidW5pdCI6InJhZCJ9LCJ0eXBlIjoiaGFybW9uaWMiLCJkdXJhdGlvbl9hdF9yZWZlcmVuY2VfbGlmdCI6eyJ2YWx1ZSI6MjEwLCJ1bml0IjoiZGVnIn0sInJlZmVyZW5jZV9saWZ0Ijp7InZhbHVlIjowLjAwMTI3LCJ1bml0IjoibSJ9LCJtYXhpbXVtX2xpZnQiOnsidmFsdWUiOjEwLjksInVuaXQiOiJtbSJ9LCJnYW1tYSI6MC45LCJzYW1wbGVfY291bnQiOjI1Nn1dLCJjYW1zaGFmdHMiOlt7ImlkIjoiaW50YWtlLWNhbXNoYWZ0IiwiYWR2YW5jZSI6eyJ2YWx1ZSI6MCwidW5pdCI6ImRlZyJ9LCJiYXNlX3JhZGl1cyI6eyJ2YWx1ZSI6MTcsInVuaXQiOiJtbSJ9LCJsb2JlcyI6WyJpbnRha2UtbG9iZS0xIiwiaW50YWtlLWxvYmUtMyIsImludGFrZS1sb2JlLTUiLCJpbnRha2UtbG9iZS03IiwiaW50YWtlLWxvYmUtMiIsImludGFrZS1sb2JlLTQiLCJpbnRha2UtbG9iZS02IiwiaW50YWtlLWxvYmUtOCJdfSx7ImlkIjoiZXhoYXVzdC1jYW1zaGFmdCIsImFkdmFuY2UiOnsidmFsdWUiOjAsInVuaXQiOiJkZWcifSwiYmFzZV9yYWRpdXMiOnsidmFsdWUiOjE3LCJ1bml0IjoibW0ifSwibG9iZXMiOlsiZXhoYXVzdC1sb2JlLTEiLCJleGhhdXN0LWxvYmUtMyIsImV4aGF1c3QtbG9iZS01IiwiZXhoYXVzdC1sb2JlLTciLCJleGhhdXN0LWxvYmUtMiIsImV4aGF1c3QtbG9iZS00IiwiZXhoYXVzdC1sb2JlLTYiLCJleGhhdXN0LWxvYmUtOCJdfV0sInZhbHZldHJhaW5zIjpbeyJpZCI6InZhbHZldHJhaW4iLCJ0eXBlIjoic3RhbmRhcmQiLCJpbnRha2VfY2Ftc2hhZnQiOiJpbnRha2UtY2Ftc2hhZnQiLCJleGhhdXN0X2NhbXNoYWZ0IjoiZXhoYXVzdC1jYW1zaGFmdCJ9XSwiaGVhZHMiOlt7ImlkIjoiaGVhZCIsImNoYW1iZXJfdm9sdW1lIjp7InZhbHVlIjo3Ni45NDEsInVuaXQiOiJjbTMifSwidmFsdmV0cmFpbiI6InZhbHZldHJhaW4iLCJwb3J0cyI6WyJpbnRha2UtcG9ydCIsImV4aGF1c3QtcG9ydCJdfV0sImZ1ZWxzIjpbeyJpZCI6InJlZ3VsYXItdW5sZWFkZWQtZ2Fzb2xpbmUiLCJkaXNwbGF5X25hbWUiOiJSZWd1bGFyIFVubGVhZGVkIEdhc29saW5lIiwibW9sZWN1bGFyX21hc3MiOnsidmFsdWUiOjEwMCwidW5pdCI6ImcvbW9sIn0sImxvd2VyX2hlYXRpbmdfdmFsdWUiOnsidmFsdWUiOjQ2LjQsInVuaXQiOiJNSi9rZyJ9LCJzdG9pY2hpb21ldHJpY19haXJfZnVlbF9tb2xhcl9yYXRpbyI6MTIuNSwidHVyYnVsZW5jZV90b19mbGFtZV9zcGVlZCI6InR1cmJ1bGVuY2UtdG8tZmxhbWUtc3BlZWQiLCJjb21idXN0aW9uIjp7Im1heGltdW1fZWZmaWNpZW5jeV8wMSI6MC45NCwiY3ljbGVfdmFyaWF0aW9uXzAxIjowLjAyNSwibG93X2VmZmljaWVuY3lfYXR0ZW51YXRpb25fMDEiOjAuNzIsIm1heGltdW1fdHVyYnVsZW5jZV9lZmZlY3QiOjIsIm1heGltdW1fZGlsdXRpb25fZWZmZWN0IjoxMH19XSwiZGVmYXVsdF9mdWVsIjoicmVndWxhci11bmxlYWRlZC1nYXNvbGluZSIsImFjY2Vzc29yeV9jb25maWd1cmF0aW9ucyI6W3siaWQiOiJ3YXJtLWdlbmVyaWMtYWNjZXNzb3JpZXMiLCJ1cmkiOiIuLi8uLi9wcm9maWxlcy9zZXF1b2lhLTN1ci1mZS1jbGVhbnJvb20vYWNjZXNzb3J5LWNvbmZpZ3VyYXRpb25zL3NlcXVvaWEtM3VyLWZlLWNsZWFucm9vbS13YXJtLWdlbmVyaWMtYWNjZXNzb3JpZXMtdjEuanNvbiIsInNoYTI1NiI6IjU4ZmVjYTJlN2IwMTFhNzJhOTEwYmU4YTc2ZGRlNzFiZGY1M2QzYmVlZGNlNWNkZDU0ZGJlZTU4MzEzNWYyMjQifV0sImxvc3NlcyI6eyJ0eXBlIjoiY2hlbl9mbHlubl9jeWNsZV9tZWFuIiwiY29uc3RhbnRfZm1lcCI6eyJ2YWx1ZSI6MC40LCJ1bml0IjoiYmFyIn0sInBlYWtfcHJlc3N1cmVfY29lZmZpY2llbnQiOjAuMDA1LCJtZWFuX3Bpc3Rvbl9zcGVlZF9jb2VmZmljaWVudCI6eyJ2YWx1ZSI6MC4wOSwidW5pdCI6ImJhcipzL20ifSwibWVhbl9waXN0b25fc3BlZWRfc3F1YXJlZF9jb2VmZmljaWVudCI6eyJ2YWx1ZSI6MC4wMDA5LCJ1bml0IjoiYmFyKnMyL20yIn0sInJlcXVpcmVkX29pbF90ZW1wZXJhdHVyZSI6eyJ2YWx1ZSI6MzYzLjE1LCJ1bml0IjoiSyJ9LCJhY2Nlc3NvcnlfY29uZmlndXJhdGlvbl9pZCI6Indhcm0tZ2VuZXJpYy1hY2Nlc3NvcmllcyJ9LCJpZ25pdGlvbiI6eyJ0aW1pbmdfY3VydmUiOiJpZ25pdGlvbi10aW1pbmciLCJ3aXJlcyI6W3siaWQiOiJ3aXJlLTEifSx7ImlkIjoid2lyZS0yIn0seyJpZCI6IndpcmUtMyJ9LHsiaWQiOiJ3aXJlLTQifSx7ImlkIjoid2lyZS01In0seyJpZCI6IndpcmUtNiJ9LHsiaWQiOiJ3aXJlLTcifSx7ImlkIjoid2lyZS04In1dLCJmaXJpbmdfb3JkZXIiOlt7IndpcmUiOiJ3aXJlLTEiLCJjcmFua19hbmdsZSI6eyJ2YWx1ZSI6MCwidW5pdCI6ImRlZyJ9fSx7IndpcmUiOiJ3aXJlLTgiLCJjcmFua19hbmdsZSI6eyJ2YWx1ZSI6OTAsInVuaXQiOiJkZWcifX0seyJ3aXJlIjoid2lyZS03IiwiY3JhbmtfYW5nbGUiOnsidmFsdWUiOjE4MCwidW5pdCI6ImRlZyJ9fSx7IndpcmUiOiJ3aXJlLTMiLCJjcmFua19hbmdsZSI6eyJ2YWx1ZSI6MjcwLCJ1bml0IjoiZGVnIn19LHsid2lyZSI6IndpcmUtNiIsImNyYW5rX2FuZ2xlIjp7InZhbHVlIjozNjAsInVuaXQiOiJkZWcifX0seyJ3aXJlIjoid2lyZS01IiwiY3JhbmtfYW5nbGUiOnsidmFsdWUiOjQ1MCwidW5pdCI6ImRlZyJ9fSx7IndpcmUiOiJ3aXJlLTQiLCJjcmFua19hbmdsZSI6eyJ2YWx1ZSI6NTQwLCJ1bml0IjoiZGVnIn19LHsid2lyZSI6IndpcmUtMiIsImNyYW5rX2FuZ2xlIjp7InZhbHVlIjo2MzAsInVuaXQiOiJkZWcifX1dLCJsaW1pdGVyIjp7ImFjdGl2YXRpb25fc3BlZWQiOnsidmFsdWUiOjYxMDAsInVuaXQiOiJycG0ifSwiY3V0X2R1cmF0aW9uIjp7InZhbHVlIjowLjA3NSwidW5pdCI6InMifX19LCJ0aHJvdHRsZV9jb250cm9sbGVycyI6W3siaWQiOiJkaXJlY3QtdGhyb3R0bGUiLCJ0eXBlIjoiZGlyZWN0IiwiZ2FtbWEiOjEuNzV9XSwidGhyb3R0bGVfY29udHJvbGxlciI6ImRpcmVjdC10aHJvdHRsZSIsInN0YXJ0ZXIiOnsidHlwZSI6ImNyYW5raW5nIiwidG9ycXVlIjp7InZhbHVlIjozMDAsInVuaXQiOiJOKm0ifSwidGFyZ2V0X3NwZWVkIjp7InZhbHVlIjoyMzAsInVuaXQiOiJycG0ifX0sImN5bGluZGVycyI6W3siaWQiOiJjeWxpbmRlci0xIiwiYmFuayI6ImJhbmsub2RkIiwiam91cm5hbCI6ImpvdXJuYWwtMTIiLCJjb25uZWN0aW5nX3JvZCI6InJvZCIsInBpc3RvbiI6InBpc3RvbiIsImludGFrZSI6ImludGFrZSIsImV4aGF1c3QiOiJleGhhdXN0Lm9kZCIsImlnbml0aW9uX3dpcmUiOiJ3aXJlLTEiLCJpbnRha2VfcG9ydCI6ImludGFrZS1wb3J0IiwiZXhoYXVzdF9wb3J0IjoiZXhoYXVzdC1wb3J0IiwiZXhoYXVzdF9oZWFkZXJfcHJpbWFyeV9sZW5ndGgiOnsidmFsdWUiOjQzMCwidW5pdCI6Im1tIn19LHsiaWQiOiJjeWxpbmRlci0zIiwiYmFuayI6ImJhbmsub2RkIiwiam91cm5hbCI6ImpvdXJuYWwtMzQiLCJjb25uZWN0aW5nX3JvZCI6InJvZCIsInBpc3RvbiI6InBpc3RvbiIsImludGFrZSI6ImludGFrZSIsImV4aGF1c3QiOiJleGhhdXN0Lm9kZCIsImlnbml0aW9uX3dpcmUiOiJ3aXJlLTMiLCJpbnRha2VfcG9ydCI6ImludGFrZS1wb3J0IiwiZXhoYXVzdF9wb3J0IjoiZXhoYXVzdC1wb3J0IiwiZXhoYXVzdF9oZWFkZXJfcHJpbWFyeV9sZW5ndGgiOnsidmFsdWUiOjQ1NSwidW5pdCI6Im1tIn19LHsiaWQiOiJjeWxpbmRlci01IiwiYmFuayI6ImJhbmsub2RkIiwiam91cm5hbCI6ImpvdXJuYWwtNTYiLCJjb25uZWN0aW5nX3JvZCI6InJvZCIsInBpc3RvbiI6InBpc3RvbiIsImludGFrZSI6ImludGFrZSIsImV4aGF1c3QiOiJleGhhdXN0Lm9kZCIsImlnbml0aW9uX3dpcmUiOiJ3aXJlLTUiLCJpbnRha2VfcG9ydCI6ImludGFrZS1wb3J0IiwiZXhoYXVzdF9wb3J0IjoiZXhoYXVzdC1wb3J0IiwiZXhoYXVzdF9oZWFkZXJfcHJpbWFyeV9sZW5ndGgiOnsidmFsdWUiOjQ4MCwidW5pdCI6Im1tIn19LHsiaWQiOiJjeWxpbmRlci03IiwiYmFuayI6ImJhbmsub2RkIiwiam91cm5hbCI6ImpvdXJuYWwtNzgiLCJjb25uZWN0aW5nX3JvZCI6InJvZCIsInBpc3RvbiI6InBpc3RvbiIsImludGFrZSI6ImludGFrZSIsImV4aGF1c3QiOiJleGhhdXN0Lm9kZCIsImlnbml0aW9uX3dpcmUiOiJ3aXJlLTciLCJpbnRha2VfcG9ydCI6ImludGFrZS1wb3J0IiwiZXhoYXVzdF9wb3J0IjoiZXhoYXVzdC1wb3J0IiwiZXhoYXVzdF9oZWFkZXJfcHJpbWFyeV9sZW5ndGgiOnsidmFsdWUiOjUwNSwidW5pdCI6Im1tIn19LHsiaWQiOiJjeWxpbmRlci0yIiwiYmFuayI6ImJhbmsuZXZlbiIsImpvdXJuYWwiOiJqb3VybmFsLTEyIiwiY29ubmVjdGluZ19yb2QiOiJyb2QiLCJwaXN0b24iOiJwaXN0b24iLCJpbnRha2UiOiJpbnRha2UiLCJleGhhdXN0IjoiZXhoYXVzdC5ldmVuIiwiaWduaXRpb25fd2lyZSI6IndpcmUtMiIsImludGFrZV9wb3J0IjoiaW50YWtlLXBvcnQiLCJleGhhdXN0X3BvcnQiOiJleGhhdXN0LXBvcnQiLCJleGhhdXN0X2hlYWRlcl9wcmltYXJ5X2xlbmd0aCI6eyJ2YWx1ZSI6NDQwLCJ1bml0IjoibW0ifX0seyJpZCI6ImN5bGluZGVyLTQiLCJiYW5rIjoiYmFuay5ldmVuIiwiam91cm5hbCI6ImpvdXJuYWwtMzQiLCJjb25uZWN0aW5nX3JvZCI6InJvZCIsInBpc3RvbiI6InBpc3RvbiIsImludGFrZSI6ImludGFrZSIsImV4aGF1c3QiOiJleGhhdXN0LmV2ZW4iLCJpZ25pdGlvbl93aXJlIjoid2lyZS00IiwiaW50YWtlX3BvcnQiOiJpbnRha2UtcG9ydCIsImV4aGF1c3RfcG9ydCI6ImV4aGF1c3QtcG9ydCIsImV4aGF1c3RfaGVhZGVyX3ByaW1hcnlfbGVuZ3RoIjp7InZhbHVlIjo0NjUsInVuaXQiOiJtbSJ9fSx7ImlkIjoiY3lsaW5kZXItNiIsImJhbmsiOiJiYW5rLmV2ZW4iLCJqb3VybmFsIjoiam91cm5hbC01NiIsImNvbm5lY3Rpbmdfcm9kIjoicm9kIiwicGlzdG9uIjoicGlzdG9uIiwiaW50YWtlIjoiaW50YWtlIiwiZXhoYXVzdCI6ImV4aGF1c3QuZXZlbiIsImlnbml0aW9uX3dpcmUiOiJ3aXJlLTYiLCJpbnRha2VfcG9ydCI6ImludGFrZS1wb3J0IiwiZXhoYXVzdF9wb3J0IjoiZXhoYXVzdC1wb3J0IiwiZXhoYXVzdF9oZWFkZXJfcHJpbWFyeV9sZW5ndGgiOnsidmFsdWUiOjQ5MCwidW5pdCI6Im1tIn19LHsiaWQiOiJjeWxpbmRlci04IiwiYmFuayI6ImJhbmsuZXZlbiIsImpvdXJuYWwiOiJqb3VybmFsLTc4IiwiY29ubmVjdGluZ19yb2QiOiJyb2QiLCJwaXN0b24iOiJwaXN0b24iLCJpbnRha2UiOiJpbnRha2UiLCJleGhhdXN0IjoiZXhoYXVzdC5ldmVuIiwiaWduaXRpb25fd2lyZSI6IndpcmUtOCIsImludGFrZV9wb3J0IjoiaW50YWtlLXBvcnQiLCJleGhhdXN0X3BvcnQiOiJleGhhdXN0LXBvcnQiLCJleGhhdXN0X2hlYWRlcl9wcmltYXJ5X2xlbmd0aCI6eyJ2YWx1ZSI6NTE1LCJ1bml0IjoibW0ifX1dLCJzb3VyY2Vfcm91dGVzIjpbeyJpZCI6ImV4aGF1c3Qub2RkIiwidHlwZSI6ImV4aGF1c3QiLCJleGhhdXN0IjoiZXhoYXVzdC5vZGQifSx7ImlkIjoiZXhoYXVzdC5ldmVuIiwidHlwZSI6ImV4aGF1c3QiLCJleGhhdXN0IjoiZXhoYXVzdC5ldmVuIn1dfSwicHJlc2VudGF0aW9uIjp7ImFzc2V0cyI6W3siaWQiOiJzbW9vdGgtMzkiLCJraW5kIjoiaW1wdWxzZV9yZXNwb25zZSIsInVyaSI6Ii4uLy4uLy4uL3JlZmVyZW5jZS9maXh0dXJlcy9lbmdpbmUtc2ltLWlyLWxpYnJhcnkvcHJlc2VudGF0aW9uL3Ntb290aF8zOS53YXYiLCJzaGEyNTYiOiI3NWRlOWRiNDcwNjMzOTU2NjVkMzZiNmQ0MjMyZjQ3N2FhZTM4NWZlYWE5YmExNTgzNTNmYmRhZjEyMmRiNWNjIn1dLCJjeWxpbmRlcl9yb3V0ZXMiOlt7ImN5bGluZGVyIjoiY3lsaW5kZXItMSIsInJvdXRlIjoiZXhoYXVzdC5vZGQiLCJnYWluX2xpbmVhciI6MX0seyJjeWxpbmRlciI6ImN5bGluZGVyLTMiLCJyb3V0ZSI6ImV4aGF1c3Qub2RkIiwiZ2Fpbl9saW5lYXIiOjAuOTh9LHsiY3lsaW5kZXIiOiJjeWxpbmRlci01Iiwicm91dGUiOiJleGhhdXN0Lm9kZCIsImdhaW5fbGluZWFyIjowLjk3fSx7ImN5bGluZGVyIjoiY3lsaW5kZXItNyIsInJvdXRlIjoiZXhoYXVzdC5vZGQiLCJnYWluX2xpbmVhciI6MC45Nn0seyJjeWxpbmRlciI6ImN5bGluZGVyLTIiLCJyb3V0ZSI6ImV4aGF1c3QuZXZlbiIsImdhaW5fbGluZWFyIjowLjk5fSx7ImN5bGluZGVyIjoiY3lsaW5kZXItNCIsInJvdXRlIjoiZXhoYXVzdC5ldmVuIiwiZ2Fpbl9saW5lYXIiOjAuOTh9LHsiY3lsaW5kZXIiOiJjeWxpbmRlci02Iiwicm91dGUiOiJleGhhdXN0LmV2ZW4iLCJnYWluX2xpbmVhciI6MC45N30seyJjeWxpbmRlciI6ImN5bGluZGVyLTgiLCJyb3V0ZSI6ImV4aGF1c3QuZXZlbiIsImdhaW5fbGluZWFyIjowLjk1fV0sInJvdXRlcyI6W3sicm91dGUiOiJleGhhdXN0Lm9kZCIsInNvdXJjZV9nYWluX2xpbmVhciI6MC41OCwiaW1wdWxzZV9yZXNwb25zZSI6InNtb290aC0zOSIsImltcHVsc2VfcmVzcG9uc2VfZ2Fpbl9saW5lYXIiOjAuMDAxLCJ3ZXRfbWl4XzAxIjoxfSx7InJvdXRlIjoiZXhoYXVzdC5ldmVuIiwic291cmNlX2dhaW5fbGluZWFyIjowLjU2LCJpbXB1bHNlX3Jlc3BvbnNlIjoic21vb3RoLTM5IiwiaW1wdWxzZV9yZXNwb25zZV9nYWluX2xpbmVhciI6MC4wMDEsIndldF9taXhfMDEiOjF9XSwiY29uZGl0aW9uaW5nIjp7ImppdHRlcl9zY2FsZSI6MC4wMjUwMDAwMDAzNzI1MjkwMywiaml0dGVyX21vZHVsYXRpb25fY3V0b2ZmX2ZyZXF1ZW5jeSI6eyJ2YWx1ZSI6MTAwMDAsInVuaXQiOiJIeiJ9LCJkZXJpdmF0aXZlX21peF8wMSI6MC4wMDAwMzUwMDAwMDA5MzQ4MTUwMzQsImFpcl9ub2lzZV9taXhfMDEiOjAuMTgwMDAwMDA3MTUyNTU3MzcsImFpcl9ub2lzZV9jdXRvZmZfZnJlcXVlbmN5Ijp7InZhbHVlIjoyMDAwLCJ1bml0IjoiSHoifX0sImJ1c2VzIjpbeyJpZCI6Im1hc3Rlci1lbmdpbmUtcmF3Iiwicm91dGVzIjpbImV4aGF1c3QuZXZlbiIsImV4aGF1c3Qub2RkIl0sImdhaW5fbGluZWFyIjoxLCJwdWJsaXNoIjp0cnVlfSx7ImlkIjoibWFzdGVyLWVuZ2luZS1hdWRpdGlvbiIsInJvdXRlcyI6WyJleGhhdXN0LmV2ZW4iLCJleGhhdXN0Lm9kZCJdLCJnYWluX2xpbmVhciI6MSwicHVibGlzaCI6dHJ1ZX1dLCJhdWRpdGlvbiI6eyJidXNlcyI6WyJtYXN0ZXItZW5naW5lLWF1ZGl0aW9uIl0sInZvbHVtZV9saW5lYXIiOjEsImZhZGVfaW4iOnsidmFsdWUiOjAuMDIsInVuaXQiOiJzIn0sImZhZGVfb3V0Ijp7InZhbHVlIjowLjAyLCJ1bml0IjoicyJ9fSwicHVibGljYXRpb25fZ2Fpbl9saW5lYXIiOjEuNDkwMTE2MTE5Mzg0NzY1NkUtOH0sInJpZyI6eyJpZCI6InNlcXVvaWEtc3I1LTR3ZC1ldmFsdWF0aW9uIiwidmVoaWNsZSI6eyJpZCI6InNlcXVvaWEtc3I1LTR3ZCIsIm1hc3MiOnsidmFsdWUiOjI3MTQuOCwidW5pdCI6ImtnIn0sImRyYWdfY29lZmZpY2llbnQiOjAuMzYsImZyb250YWxfYXJlYSI6eyJ2YWx1ZSI6My4zNSwidW5pdCI6Im0yIn0sImRpZmZlcmVudGlhbF9yYXRpbyI6NC4zLCJ0aXJlX3JhZGl1cyI6eyJ2YWx1ZSI6NDA3LjM1LCJ1bml0IjoibW0ifSwicm9sbGluZ19yZXNpc3RhbmNlX2ZvcmNlIjp7InZhbHVlIjozMjAsInVuaXQiOiJOIn19LCJ0cmFuc21pc3Npb24iOnsiaWQiOiJzZXF1b2lhLXNpeC1zcGVlZCIsIm1heGltdW1fY2x1dGNoX3RvcnF1ZSI6eyJ2YWx1ZSI6ODAwLCJ1bml0IjoiTiptIn0sImdlYXJzIjpbeyJpZCI6ImdlYXItMSIsInJhdGlvIjozLjMzM30seyJpZCI6ImdlYXItMiIsInJhdGlvIjoxLjk2fSx7ImlkIjoiZ2Vhci0zIiwicmF0aW8iOjEuMzUzfSx7ImlkIjoiZ2Vhci00IiwicmF0aW8iOjF9LHsiaWQiOiJnZWFyLTUiLCJyYXRpbyI6MC43Mjh9LHsiaWQiOiJnZWFyLTYiLCJyYXRpbyI6MC41ODh9XX19fQo='));
+
+    const sections = [
+      { id: 'identity', label: 'Engine', description: 'Identity, architecture, cycle, and operating limit.', roots: [
+        ['Identity', 'engine.identity'], ['Cycle', 'engine.cycle'], ['Layout', 'engine.layout'], ['Limits', 'engine.limits']
+      ]},
+      { id: 'cylinders', label: 'Cylinders & banks', description: 'Two bank definitions and eight physical cylinder instances. Shared piston and rod definitions are edited separately.', roots: [
+        ['Bank definitions', 'engine.banks'], ['Cylinder instances', 'engine.cylinders']
+      ]},
+      { id: 'rotating', label: 'Rotating assembly', description: 'Crankshafts, journals, connecting-rod definitions, and shared piston definitions.', roots: [
+        ['Output crankshaft', 'engine.output_crankshaft'], ['Crankshaft definitions', 'engine.crankshafts'], ['Journal definitions', 'engine.journals'],
+        ['Connecting-rod definitions', 'engine.connecting_rods'], ['Piston definitions', 'engine.pistons']
+      ]},
+      { id: 'airflow', label: 'Airflow & exhaust', description: 'Intake, heads, ports, exhaust geometry, restrictions, and the flow curves they consume.', roots: [
+        ['Intake definitions', 'engine.intakes'], ['Head definitions', 'engine.heads'], ['Port definitions', 'engine.ports'],
+        ['Exhaust-system definitions', 'engine.exhausts'], ['Port flow curves', 'curves.airflow']
+      ]},
+      { id: 'valvetrain', label: 'Cams & valvetrain', description: 'Every cam lobe, camshaft, and valvetrain field, edited in place.', roots: [
+        ['Cam-lobe definitions', 'engine.cam_lobes'], ['Camshaft definitions', 'engine.camshafts'], ['Valvetrain definitions', 'engine.valvetrains'],
+        ['Sampled lift curves', 'curves.valvetrain']
+      ]},
+      { id: 'fuel', label: 'Fuel & combustion', description: 'Every fuel and combustion property plus the default-fuel reference.', roots: [
+        ['Default fuel', 'engine.default_fuel'], ['Fuel definitions', 'engine.fuels'], ['Flame-speed curves', 'curves.fuel']
+      ]},
+      { id: 'controls', label: 'Ignition & controls', description: 'Structured firing sequence, timing, limiter, throttle behavior, and starter hardware.', roots: [
+        ['Ignition', 'engine.ignition'], ['Ignition timing curves', 'curves.ignition'],
+        ['Throttle-controller definitions', 'engine.throttle_controllers'], ['Active throttle controller', 'engine.throttle_controller'], ['Starter', 'engine.starter']
+      ]},
+      { id: 'vehicle', label: 'Losses & vehicle', description: 'Mechanical losses and the exact vehicle/transmission used by the geared live bench.', roots: [
+        ['Losses', 'engine.losses'], ['Accessory profiles', 'engine.accessory_configurations'],
+        ['Vehicle', 'rig.vehicle'], ['Transmission', 'rig.transmission']
+      ]},
+      { id: 'audio', label: 'Audio character', description: 'Cylinder routing, packaged exhaust responses, conditioning, and output mix.', roots: [
+        ['Simulation source routes', 'engine.source_routes'], ['Presentation', 'presentation']
+      ]}
+    ];
+
+    const engine = sourceDocument.engine;
+    const presentation = sourceDocument.presentation;
+
+    function at(path) {
+      if (path === 'curves.airflow') {
+        const wanted = new Set(engine.ports.map(function (port) { return port.flow_curve; }));
+        return engine.curves.filter(function (curve) { return wanted.has(curve.id); });
+      }
+      if (path === 'curves.valvetrain') {
+        const wanted = new Set(engine.cam_lobes.map(function (lobe) { return lobe.lift_curve; }).filter(Boolean));
+        return engine.curves.filter(function (curve) { return wanted.has(curve.id); });
+      }
+      if (path === 'curves.fuel') {
+        const wanted = new Set(engine.fuels.map(function (fuel) { return fuel.turbulence_to_flame_speed; }));
+        return engine.curves.filter(function (curve) { return wanted.has(curve.id); });
+      }
+      if (path === 'curves.ignition') return engine.curves.filter(function (curve) { return curve.id === engine.ignition.timing_curve; });
+      return path.split('.').reduce(function (value, key) { return value == null ? undefined : value[key]; }, sourceDocument);
+    }
+
+    function ids(values) {
+      return Array.isArray(values) ? values.map(function (value) { return value && value.id; }).filter(Boolean) : [];
+    }
+
+    const referenceOptions = {
+      output_crankshaft: ids(engine.crankshafts),
+      crankshaft: ids(engine.crankshafts),
+      journal: ids(engine.journals),
+      connecting_rod: ids(engine.connecting_rods),
+      piston: ids(engine.pistons),
+      bank: ids(engine.banks),
+      head: ids(engine.heads),
+      ports: ids(engine.ports),
+      flow_curve: ids(engine.curves),
+      timing_curve: ids(engine.curves),
+      turbulence_to_flame_speed: ids(engine.curves),
+      valvetrain: ids(engine.valvetrains),
+      intake_camshaft: ids(engine.camshafts),
+      exhaust_camshaft: ids(engine.camshafts),
+      lobes: ids(engine.cam_lobes),
+      intake: ids(engine.intakes),
+      exhaust: ids(engine.exhausts),
+      throttle_controller: ids(engine.throttle_controllers),
+      default_fuel: ids(engine.fuels),
+      fuel: ids(engine.fuels),
+      accessory_configuration_id: ids(engine.accessory_configurations),
+      wire: engine.ignition.wires.map(function (wire) { return wire.id; }),
+      route: engine.source_routes.map(function (route) { return route.id; }),
+      routes: engine.source_routes.map(function (route) { return route.id; }),
+      impulse_response: ids(presentation.assets),
+      buses: ids(presentation.buses),
+      cylinder: ids(engine.cylinders)
+    };
+
+    const enumOptions = {
+      cycle: ['four_stroke'],
+      layout: ['inline', 'v_engine', 'opposed', 'custom'],
+      port_kind: ['intake', 'exhaust'],
+      kind: ['intake', 'exhaust', 'impulse_response'],
+      evaluation: ['triangle_weighted_samples'],
+      below_domain: ['clamp'],
+      above_domain: ['clamp'],
+      input_dimension: ['length', 'angular_speed', 'dimensionless'],
+      output_dimension: ['volume_flow_rate', 'angle', 'speed']
+    };
+
+    const quantityDimensions = ['dimensionless', 'angle', 'angular_speed', 'area', 'density', 'duration', 'energy_per_mass', 'force', 'frequency', 'length', 'mass', 'mass_flow_rate', 'molar_mass', 'moment_of_inertia', 'power', 'pressure', 'pressure_per_speed', 'pressure_per_speed_squared', 'speed', 'temperature', 'torque', 'volume', 'volume_flow_rate'];
+
+    const unitFamilies = {};
+    [
+      ['1'], ['deg', 'rad'], ['rpm', 'rad/s'], ['m2', 'cm2', 'mm2', 'in2'], ['kg/m3', 'g/cm3'], ['s', 'ms'],
+      ['J/kg', 'kJ/kg', 'MJ/kg'], ['N'], ['Hz', 'kHz'], ['m', 'cm', 'mm', 'in'], ['kg', 'g', 'lb'],
+      ['kg/s', 'g/s'], ['kg/mol', 'g/mol'], ['kg*m2'], ['W', 'kW'], ['Pa', 'kPa', 'bar', 'atm', 'psi', 'inHg', 'inH2O'],
+      ['Pa*s/m', 'kPa*s/m', 'bar*s/m'], ['Pa*s2/m2', 'kPa*s2/m2', 'bar*s2/m2'], ['m/s', 'km/h', 'mph'],
+      ['K', 'degC'], ['N*m', 'lb*ft'], ['m3', 'L', 'cm3'], ['m3/s', 'L/s', 'cfm']
+    ].forEach(function (family) { family.forEach(function (unit) { unitFamilies[unit] = family; }); });
+
+    const textKeys = new Set(['id', 'display_name', 'description']);
+    const packageManagedKeys = new Set(['uri', 'sha256']);
+
+    function esc(value) {
+      return String(value).replace(/[&<>"']/g, function (character) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character];
+      });
+    }
+
+    function humanize(value) {
+      return String(value).replace(/_/g, ' ').replace(/\b\w/g, function (letter) { return letter.toUpperCase(); });
+    }
+
+    function selectHtml(value, options, label) {
+      const unique = Array.from(new Set([value].concat(options || [])));
+      return '<select aria-label="' + esc(label) + '">' + unique.map(function (option) {
+        return '<option value="' + esc(option) + '"' + (option === value ? ' selected' : '') + '>' + esc(humanize(option)) + '</option>';
+      }).join('') + '</select>';
+    }
+
+    function typeOptions(path, current) {
+      if (path.indexOf('.starter.') >= 0) return ['cranking'];
+      if (path.indexOf('.losses.') >= 0) return ['chen_flynn_cycle_mean'];
+      if (path.indexOf('.cam_lobes.') >= 0) return ['harmonic'];
+      if (path.indexOf('.valvetrains.') >= 0) return ['standard'];
+      if (path.indexOf('.throttle_controllers.') >= 0) return ['direct'];
+      if (path.indexOf('.source_routes.') >= 0) return ['exhaust'];
+      if (path.indexOf('restriction') >= 0 || path.indexOf('.blowby.') >= 0) return ['flow_bench'];
+      return [current];
+    }
+
+    function referenceValues(key, path) {
+      if (referenceOptions[key]) return referenceOptions[key];
+      const singular = key.endsWith('s') ? key.slice(0, -1) : key;
+      if (referenceOptions[singular]) return referenceOptions[singular];
+      if (key === 'impulse_response') return ids(presentation.assets);
+      if (key === 'route' && path.indexOf('presentation.') === 0) return engine.source_routes.map(function (route) { return route.id; });
+      return null;
+    }
+
+    function isQuantity(value) {
+      return value && typeof value === 'object' && !Array.isArray(value) &&
+        typeof value.value === 'number' && typeof value.unit === 'string';
+    }
+
+    function renderQuantity(label, value, path) {
+      const units = unitFamilies[value.unit] || [value.unit];
+      const hasStandard = typeof value.standard === 'string';
+      const standard = hasStandard
+        ? selectHtml(value.standard, value.standard === 'port_28_inh2o' ? ['port_28_inh2o'] : ['carburetor_1p5_inhg'], label + ' standard')
+        : '';
+      return '<div class="editorField"><label>' + esc(humanize(label)) + '</label><div class="valueRow' + (hasStandard ? ' withStandard' : '') + '">' +
+        '<input type="number" step="any" value="' + esc(value.value) + '" aria-label="' + esc(humanize(label)) + ' value">' +
+        selectHtml(value.unit, units, humanize(label) + ' unit') + standard + '</div></div>';
+    }
+
+    function renderPrimitive(label, value, path) {
+      const key = path.split('.').pop();
+      const displayLabel = humanize(label);
+
+      if (typeof value === 'boolean') {
+        return '<label class="checkboxField"><input type="checkbox"' + (value ? ' checked' : '') + '><span>' + esc(displayLabel) + '</span></label>';
+      }
+
+      if (typeof value === 'number') {
+        return '<div class="editorField"><label>' + esc(displayLabel) + '</label><input type="number" step="any" value="' + esc(value) + '"></div>';
+      }
+
+      if (value === null) {
+        return '<div class="editorField"><label>' + esc(displayLabel) + '</label><div class="emptyValue">None</div></div>';
+      }
+
+      if (packageManagedKeys.has(key)) return '';
+
+      const refs = referenceValues(key, path);
+      if (refs) {
+        return '<div class="editorField"><label>' + esc(displayLabel) + '</label>' + selectHtml(value, refs, displayLabel) + '</div>';
+      }
+
+      if (key === 'type') {
+        return '<div class="editorField"><label>' + esc(displayLabel) + '</label>' + selectHtml(value, typeOptions(path, value), displayLabel) + '</div>';
+      }
+
+      if (enumOptions[key]) {
+        return '<div class="editorField"><label>' + esc(displayLabel) + '</label>' + selectHtml(value, enumOptions[key], displayLabel) + '</div>';
+      }
+
+      if (textKeys.has(key)) {
+        if (key === 'description') {
+          return '<div class="editorField wide"><label>' + esc(displayLabel) + '</label><textarea>' + esc(value) + '</textarea></div>';
+        }
+        return '<div class="editorField"><label>' + esc(displayLabel) + '</label><input type="text" value="' + esc(value) + '"></div>';
+      }
+
+      return '<div class="editorField"><label>' + esc(displayLabel) + '</label>' + selectHtml(value, [value], displayLabel) + '</div>';
+    }
+
+    function renderObjectFields(value, path) {
+      return Object.keys(value).map(function (key) {
+        return renderValue(key, value[key], path + '.' + key);
+      }).join('');
+    }
+
+    function renderSamples(label, values, path) {
+      const hasStandard = values.some(function (sample) { return sample.output && sample.output.standard; });
+      const rows = values.map(function (sample, index) {
+        return '<tr><td class="indexCell">' + (index + 1) + '</td>' +
+          '<td><input type="number" step="any" value="' + esc(sample.input.value) + '"></td>' +
+          '<td>' + selectHtml(sample.input.unit, unitFamilies[sample.input.unit] || [sample.input.unit], 'Input unit') + '</td>' +
+          '<td><input type="number" step="any" value="' + esc(sample.output.value) + '"></td>' +
+          '<td>' + selectHtml(sample.output.unit, unitFamilies[sample.output.unit] || [sample.output.unit], 'Output unit') + '</td>' +
+          (hasStandard ? '<td>' + (sample.output.standard ? selectHtml(sample.output.standard, [sample.output.standard], 'Flow standard') : '—') + '</td>' : '') +
+          '</tr>';
+      }).join('');
+      return '<div class="arrayBlock"><div class="arrayTitle"><span>' + esc(humanize(label)) + '</span><span class="count">' + values.length + ' samples</span></div>' +
+        '<div class="typedTableWrap"><table class="typedTable"><thead><tr><th></th><th>Input</th><th>Unit</th><th>Output</th><th>Unit</th>' +
+        (hasStandard ? '<th>Standard</th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+        '<button class="arrayAdd" data-toast="Add a typed curve sample">+ Add sample</button></div>';
+    }
+
+    function renderFiringOrder(label, values, path) {
+      const wires = referenceOptions.wire;
+      const rows = values.map(function (entry, index) {
+        return '<tr><td class="indexCell">' + (index + 1) + '</td><td>' +
+          selectHtml(entry.wire, wires, 'Ignition wire') + '</td><td><input type="number" step="any" value="' + esc(entry.crank_angle.value) + '"></td><td>' +
+          selectHtml(entry.crank_angle.unit, unitFamilies[entry.crank_angle.unit] || [entry.crank_angle.unit], 'Crank-angle unit') + '</td></tr>';
+      }).join('');
+      return '<div class="arrayBlock"><div class="arrayTitle"><span>Firing order</span><span class="count">' + values.length + ' events</span></div>' +
+        '<div class="typedTableWrap"><table class="typedTable"><thead><tr><th></th><th>Wire</th><th>Crank angle</th><th>Unit</th></tr></thead><tbody>' +
+        rows + '</tbody></table></div><button class="arrayAdd" data-toast="Add a structured ignition event">+ Add ignition event</button></div>';
+    }
+
+    function renderPrimitiveArray(label, values, path) {
+      const key = path.split('.').pop();
+      const options = referenceValues(key, path);
+      const rows = values.map(function (value, index) {
+        let input;
+        if (typeof value === 'number') {
+          input = '<input type="number" step="any" value="' + esc(value) + '">';
+        } else {
+          input = selectHtml(value, options || [value], humanize(label) + ' ' + (index + 1));
+        }
+        return '<div class="inlineListRow"><span>' + (index + 1) + '</span>' + input + '<button class="removeItem" data-toast="Remove item">×</button></div>';
+      }).join('');
+      return '<div class="arrayBlock"><div class="arrayTitle"><span>' + esc(humanize(label)) + '</span><span class="count">' + values.length + '</span></div>' +
+        '<div class="inlineList">' + rows + '</div><button class="arrayAdd" data-toast="Add a typed item">+ Add item</button></div>';
+    }
+
+    function renderObjectArray(label, values, path) {
+      const cards = values.map(function (value, index) {
+        const itemName = value.id || value.display_name || humanize(label) + ' ' + (index + 1);
+        const purpose = value.id === 'smooth-39' ? '<p class="resourcePurpose"><strong>Smooth 39</strong> · Damped, darker exhaust character with a short decay. Use Wet mix and impulse-response gain below to place it in the final sound.</p>' : '';
+        return '<article class="itemCard"><header class="itemHeader"><strong>' + esc(itemName) + '</strong><button class="removeItem" data-toast="Remove ' + esc(itemName) + '">×</button></header>' +
+          '<div class="itemBody">' + purpose + renderObjectFields(value, path + '.' + index) + '</div></article>';
+      }).join('');
+      return '<div class="arrayBlock"><div class="arrayTitle"><span>' + esc(humanize(label)) + '</span><span class="count">' + values.length + '</span></div>' +
+        cards + '<button class="arrayAdd" data-toast="Add a fully typed ' + esc(humanize(label).toLowerCase()) + ' item">+ Add ' + esc(humanize(label).replace(/s$/, '').toLowerCase()) + '</button></div>';
+    }
+
+    function compactSelect(label, value, options) {
+      return '<div class="compactField"><label>' + esc(label) + '</label>' + selectHtml(value, options, label) + '</div>';
+    }
+
+    function compactQuantity(label, quantity) {
+      return '<div class="compactField"><label>' + esc(label) + '</label><div class="valueRow"><input type="number" step="any" value="' + esc(quantity.value) + '">' +
+        selectHtml(quantity.unit, unitFamilies[quantity.unit] || [quantity.unit], label + ' unit') + '</div></div>';
+    }
+
+    function commonValue(values, key) {
+      const candidates = values.map(function (value) { return value[key]; });
+      return candidates.every(function (value) { return value === candidates[0]; }) ? candidates[0] : null;
+    }
+
+    function renderCylinderTopology() {
+      const cylinders = engine.cylinders;
+      const odd = cylinders.filter(function (cylinder) { return cylinder.bank === 'bank.odd'; });
+      const even = cylinders.filter(function (cylinder) { return cylinder.bank === 'bank.even'; });
+      const bankCards = engine.banks.map(function (bank) {
+        const bankCylinders = cylinders.filter(function (cylinder) { return cylinder.bank === bank.id; });
+        const exhaust = commonValue(bankCylinders, 'exhaust');
+        return '<article class="bankCard"><div class="bankCardHeader"><strong>' + esc(humanize(bank.id)) + '</strong><span>' + bankCylinders.length + ' cylinders</span></div><div class="bankFields">' +
+          compactQuantity('Bank angle', bank.angle) + compactQuantity('Bore', bank.bore) + compactQuantity('Deck height', bank.deck_height) +
+          compactSelect('Cylinder head', bank.head, ids(engine.heads)) + compactSelect('Exhaust system', exhaust, ids(engine.exhausts)) +
+          '</div></article>';
+      }).join('');
+      const shared = [
+        compactSelect('Connecting rod', commonValue(cylinders, 'connecting_rod'), ids(engine.connecting_rods)),
+        compactSelect('Piston', commonValue(cylinders, 'piston'), ids(engine.pistons)),
+        compactSelect('Intake', commonValue(cylinders, 'intake'), ids(engine.intakes)),
+        compactSelect('Intake port', commonValue(cylinders, 'intake_port'), engine.ports.filter(function (port) { return port.kind === 'intake'; }).map(function (port) { return port.id; })),
+        compactSelect('Exhaust port', commonValue(cylinders, 'exhaust_port'), engine.ports.filter(function (port) { return port.kind === 'exhaust'; }).map(function (port) { return port.id; }))
+      ].join('');
+      const rows = odd.map(function (left, index) {
+        const right = even[index];
+        const journal = engine.journals.find(function (item) { return item.id === left.journal; });
+        function cylinderSide(cylinder, side) {
+          return '<td class="cylinderCell" title="' + esc(cylinder.id) + '"><span class="cylinderIdentity ' + side + '"><i></i>' + esc(cylinder.id.replace('cylinder-', 'Cyl ')) + '</span></td>' +
+            '<td>' + selectHtml(cylinder.ignition_wire, referenceOptions.wire, cylinder.id + ' ignition wire') + '</td>' +
+            '<td><input aria-label="' + esc(cylinder.id) + ' primary length" type="number" step="any" value="' + esc(cylinder.exhaust_header_primary_length.value) + '"></td>';
+        }
+        return '<tr>' + cylinderSide(left, 'odd') + '<td>' + selectHtml(left.journal, ids(engine.journals), left.id + ' journal') + '</td>' +
+          '<td class="phaseCell"><input aria-label="' + esc(journal.id) + ' phase" type="number" step="any" value="' + esc(journal.phase.value) + '"></td>' + cylinderSide(right, 'even') + '</tr>';
+      }).join('');
+      return '<div class="mechanismSummary"><span><strong>V8</strong> architecture</span><span><strong>2</strong> banks</span><span><strong>8</strong> physical cylinders</span><span><strong>1</strong> shared piston definition</span><span><strong>1</strong> shared rod definition</span></div>' +
+        '<section class="semanticGroup"><header class="semanticGroupHeader"><strong>Shared cylinder hardware</strong><span>Applied to all 8 cylinder instances</span></header><div class="sharedHardware">' + shared + '</div></section>' +
+        '<section class="semanticGroup"><header class="semanticGroupHeader"><strong>Bank geometry and gas routing</strong><span>Bank-level assignments</span></header><div class="bankGrid">' + bankCards + '</div><button class="arrayAdd" data-toast="Add a typed bank definition">+ Add bank definition</button></section>' +
+        '<section class="semanticGroup"><header class="semanticGroupHeader"><strong>Crank and firing topology</strong><span>Four crank stations · paired cylinders across banks</span></header><div class="topologyToolbar">' +
+          compactSelect('Crank-phase unit', engine.journals[0].phase.unit, unitFamilies[engine.journals[0].phase.unit]) + compactSelect('Primary-length unit', cylinders[0].exhaust_header_primary_length.unit, unitFamilies[cylinders[0].exhaust_header_primary_length.unit]) +
+          '<button class="button" data-toast="Edit stable cylinder and journal IDs">Edit identities…</button></div><div class="topologyWrap"><table class="topology"><colgroup><col style="width:62px"><col style="width:76px"><col style="width:62px"><col style="width:86px"><col style="width:72px"><col style="width:62px"><col style="width:76px"><col style="width:62px"></colgroup><thead><tr><th>Odd bank</th><th>Ignition</th><th>Primary</th><th>Journal</th><th>Phase</th><th>Even bank</th><th>Ignition</th><th>Primary</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+        '<p class="topologyNote">Cylinder IDs remain visible as stable references. Shared rod, piston, intake, and port assignments are authored once above; journal phase and per-cylinder ignition/header differences remain explicit here.</p><button class="arrayAdd" data-toast="Add a physical cylinder instance">+ Add cylinder instance</button></section>';
+    }
+
+    function renderQuantityCell(quantity, label) {
+      return '<div class="valueRow"><input aria-label="' + esc(label) + ' value" type="number" step="any" value="' + esc(quantity.value) + '">' +
+        selectHtml(quantity.unit, unitFamilies[quantity.unit] || [quantity.unit], label + ' unit') + '</div>';
+    }
+
+    function compactNumber(label, value) {
+      return '<div class="compactField"><label>' + esc(label) + '</label><input type="number" step="any" value="' + esc(value) + '"></div>';
+    }
+
+    function compactText(label, value) {
+      return '<div class="compactField"><label>' + esc(label) + '</label><input type="text" value="' + esc(value) + '"></div>';
+    }
+
+    function optionalControl(label, action, purpose) {
+      return '<div class="optionalControl"><label>' + esc(label) + '</label><button class="button" data-toast="' + esc(action) + '">Set value…</button><small>' + esc(purpose) + '</small></div>';
+    }
+
+    function semanticGroup(title, meta, body, action) {
+      const groupId = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      return '<section class="semanticGroup" data-group="' + esc(groupId) + '"><header class="semanticGroupHeader"><strong>' + esc(title) + '</strong><span>' + esc(meta || '') + '</span></header>' + body +
+        (action ? '<button class="arrayAdd" data-toast="' + esc(action.toast) + '">' + esc(action.label) + '</button>' : '') + '</section>';
+    }
+
+    function renderEngineEditor() {
+      const identity = engine.identity;
+      return '<div class="mechanismSummary"><span><strong>5.7 L</strong> displacement</span><span><strong>V8</strong> layout</span><span><strong>4-stroke</strong> cycle</span><span><strong>' + esc(engine.limits.redline.value) + ' rpm</strong> redline</span></div>' +
+        semanticGroup('Engine identity', 'Stable project identity and human-readable metadata', '<div class="semanticFields two">' +
+          compactText('Engine ID', identity.id) + compactText('Display name', identity.display_name) +
+          '<div class="editorField wide"><label>Description</label><textarea>' + esc(identity.description || '') + '</textarea></div></div>') +
+        semanticGroup('Architecture and operating limit', 'The physical cycle and layout constrain downstream editors', '<div class="semanticFields">' +
+          compactSelect('Cycle', engine.cycle, ['four_stroke']) + compactSelect('Layout', engine.layout, ['inline', 'v_engine', 'opposed', 'custom']) +
+          compactQuantity('Redline', engine.limits.redline) + '</div>');
+    }
+
+    function renderRotatingEditor() {
+      const crank = engine.crankshafts[0];
+      const rod = engine.connecting_rods[0];
+      const piston = engine.pistons[0];
+      const journals = engine.journals.map(function (journal) {
+        const attachment = journal.type === 'master_rod' ? journal.master_cylinder : journal.crankshaft;
+        const attachmentOptions = journal.type === 'master_rod' ? ids(engine.cylinders) : ids(engine.crankshafts);
+        return '<tr><td class="rowName">' + esc(journal.id) + '</td><td>' + selectHtml(journal.type, ['crankshaft', 'master_rod'], journal.id + ' type') + '</td><td>' +
+          selectHtml(attachment, attachmentOptions, journal.id + ' attachment') + '</td><td>' + renderQuantityCell(journal.phase, journal.id + ' phase') + '</td>' +
+          (journal.type === 'master_rod' ? '<td>' + renderQuantityCell(journal.throw_radius, journal.id + ' throw radius') + '</td>' : '<td class="rowName">Uses crank throw</td>') + '</tr>';
+      }).join('');
+      const rodOptional = rod.center_of_mass_from_crank_pin ? compactQuantity('Center of mass from crank pin', rod.center_of_mass_from_crank_pin) : optionalControl('Rod center-of-mass position', 'Add optional rod center of mass', 'Use when the mass distribution is known; otherwise inertia remains authoritative.');
+      const wristOptional = piston.wrist_pin_position ? compactQuantity('Wrist-pin position', piston.wrist_pin_position) : optionalControl('Wrist-pin position', 'Add optional wrist-pin position', 'Adds the pin datum when piston geometry provides it.');
+      const blowby = piston.blowby;
+      return '<div class="mechanismFlow"><div class="flowNode"><strong>Combustion force</strong>Piston crown</div><span class="flowArrow">→</span><div class="flowNode"><strong>Connecting rod</strong>' + esc(rod.id) + '</div><span class="flowArrow">→</span><div class="flowNode"><strong>Crank journals</strong>' + engine.journals.length + ' stations</div><span class="flowArrow">→</span><div class="flowNode"><strong>Output shaft</strong>' + esc(engine.output_crankshaft) + '</div></div>' +
+        semanticGroup('Output crankshaft', 'Mass, inertia, geometry, and baseline shaft loss', '<div class="semanticFields four">' +
+          compactSelect('Output shaft', engine.output_crankshaft, ids(engine.crankshafts)) + compactText('Definition ID', crank.id) +
+          compactQuantity('Throw radius', crank.throw_radius) + compactQuantity('TDC reference', crank.tdc_reference_angle) +
+          compactQuantity('Crank mass', crank.mass) + compactQuantity('Flywheel mass', crank.flywheel_mass) +
+          compactQuantity('Moment of inertia', crank.moment_of_inertia) + compactQuantity('Friction torque', crank.friction_torque) + '</div>',
+          { label: '+ Add crankshaft definition', toast: 'Add a crankshaft definition' }) +
+        semanticGroup('Crank phasing', 'Journal type and phase establish cylinder motion', '<div class="semanticTableWrap"><table class="semanticTable"><thead><tr><th>Journal</th><th>Type</th><th>Attachment</th><th>Phase</th><th>Throw</th></tr></thead><tbody>' + journals + '</tbody></table></div>',
+          { label: '+ Add journal definition', toast: 'Add a crankshaft or master-rod journal' }) +
+        semanticGroup('Reciprocating hardware', 'Reusable definitions selected by physical cylinder instances', '<div class="semanticSplit"><article class="semanticCard"><strong>Connecting rod · ' + esc(rod.id) + '</strong><div class="semanticFields two">' +
+          compactText('Definition ID', rod.id) + compactQuantity('Length', rod.length) + compactQuantity('Mass', rod.mass) + compactQuantity('Moment of inertia', rod.moment_of_inertia) + rodOptional + '</div></article>' +
+          '<article class="semanticCard"><strong>Piston · ' + esc(piston.id) + '</strong><div class="semanticFields two">' + compactText('Definition ID', piston.id) +
+          compactQuantity('Mass', piston.mass) + compactQuantity('Compression height', piston.compression_height) + compactQuantity('Displacement volume', piston.displacement_volume) + wristOptional +
+          (blowby ? compactSelect('Blow-by model', blowby.type, ['flow_bench', 'orifice', 'curve']) + compactQuantity('Blow-by rated flow', blowby.rated_flow) + compactQuantity('Blow-by pressure drop', blowby.pressure_drop) : '<button class="arrayAdd" data-toast="Add piston blow-by model">+ Add blow-by model</button>') +
+          '</div></article></div>', { label: '+ Add rod or piston definition', toast: 'Choose a typed rotating-hardware definition' });
+    }
+
+    function restrictionCells(name, restriction) {
+      const model = restriction.type;
+      let calibration = '';
+      if (model === 'flow_bench') calibration = '<td>' + renderQuantityCell(restriction.rated_flow, name + ' rated flow') + '</td><td>' + selectHtml(restriction.rated_flow.standard, ['carburetor_1p5_inhg', 'port_28_inh2o'], name + ' calibration standard') + '</td><td>' + renderQuantityCell(restriction.pressure_drop, name + ' pressure drop') + '</td>';
+      else if (model === 'orifice') calibration = '<td>' + renderQuantityCell(restriction.effective_area, name + ' effective area') + '</td><td><input type="number" step="any" value="' + esc(restriction.discharge_coefficient_01) + '"></td><td class="rowName">—</td>';
+      else calibration = '<td colspan="3">' + selectHtml(restriction.pressure_drop_to_flow, ids(engine.curves), name + ' pressure-to-flow curve') + '</td>';
+      return '<tr><td class="rowName">' + esc(name) + '</td><td>' + selectHtml(model, ['flow_bench', 'orifice', 'curve'], name + ' restriction model') + '</td>' + calibration + '</tr>';
+    }
+
+    function restrictionEditor(name, restriction) {
+      const model = restriction.type;
+      let calibration = '';
+      if (model === 'flow_bench') {
+        calibration = compactQuantity('Rated flow', restriction.rated_flow) +
+          compactSelect('Calibration standard', restriction.rated_flow.standard, ['carburetor_1p5_inhg', 'port_28_inh2o']) +
+          compactQuantity('Pressure drop', restriction.pressure_drop);
+      } else if (model === 'orifice') {
+        calibration = compactQuantity('Effective area', restriction.effective_area) +
+          compactNumber('Discharge coefficient', restriction.discharge_coefficient_01) +
+          '<span class="restrictionPlaceholder">No bench pressure required</span>';
+      } else {
+        calibration = '<div class="compactField wide"><label>Pressure-to-flow curve</label>' +
+          selectHtml(restriction.pressure_drop_to_flow, ids(engine.curves), name + ' pressure-to-flow curve') + '</div>';
+      }
+      return '<article class="restrictionRow"><strong>' + esc(name) + '</strong>' +
+        compactSelect('Model', model, ['flow_bench', 'orifice', 'curve']) + calibration + '</article>';
+    }
+
+    function contextualCurveEditor(title, curves) {
+      if (!curves.length) return semanticGroup(title, 'No sampled curve is required by the selected definitions', '<p class="topologyNote">The current harmonic definitions author their profiles directly. Switching a consumer to a sampled variant exposes its referenced curve here.</p>', { label: '+ Add sampled curve', toast: 'Add a dimensioned sampled curve' });
+      const curve = curves[0];
+      const filter = curve.triangle_filter_radius ? compactQuantity('Smoothing radius', curve.triangle_filter_radius) : '<div class="compactField"><label>Smoothing radius</label><button class="button" data-toast="Add triangle filter radius">Add…</button></div>';
+      return semanticGroup(title, curves.length + ' curve' + (curves.length === 1 ? '' : 's') + ' consumed here', '<div class="curveSummary">' +
+        compactSelect('Curve', curve.id, curves.map(function (item) { return item.id; })) +
+        compactSelect('Evaluation', curve.evaluation, ['linear', 'right_continuous_hold', 'triangle_weighted_samples']) +
+        compactSelect('Below range', curve.below_domain, ['clamp', 'zero', 'reject']) + compactSelect('Above range', curve.above_domain, ['clamp', 'zero', 'reject']) +
+        compactSelect('Input dimension', curve.input_dimension, quantityDimensions) + compactSelect('Output dimension', curve.output_dimension, quantityDimensions) + filter +
+        '</div>' + renderSamples('Curve samples', curve.samples, 'engine.curves.samples'), { label: '+ Add curve definition', toast: 'Add a typed dimensioned curve' });
+    }
+
+    function renderAirflowEditor() {
+      const intake = engine.intakes[0];
+      const head = engine.heads[0];
+      const intakePort = engine.ports.find(function (port) { return port.kind === 'intake'; });
+      const exhaustPort = engine.ports.find(function (port) { return port.kind === 'exhaust'; });
+      const wantedCurves = new Set(engine.ports.map(function (port) { return port.flow_curve; }));
+      const flowCurves = engine.curves.filter(function (curve) { return wantedCurves.has(curve.id); });
+      const portRows = engine.ports.map(function (port) {
+        return '<tr><td class="rowName">' + esc(port.id) + '</td><td>' + selectHtml(port.kind, ['intake', 'exhaust'], port.id + ' kind') + '</td><td>' +
+          selectHtml(port.head, ids(engine.heads), port.id + ' head') + '</td><td>' + renderQuantityCell(port.runner_volume, port.id + ' runner volume') + '</td><td>' +
+          renderQuantityCell(port.runner_cross_section_area, port.id + ' cross section') + '</td><td>' + selectHtml(port.flow_curve, ids(engine.curves), port.id + ' flow curve') + '</td></tr>';
+      }).join('');
+      const exhaustCards = engine.exhausts.map(function (exhaust) {
+        const geometryMode = exhaust.collector_length ? 'length' : 'volume';
+        const geometry = exhaust.collector_length || exhaust.collector_volume;
+        return '<article class="semanticCard"><strong>' + esc(exhaust.id) + '</strong><div class="semanticFields two">' +
+          compactQuantity('Collector cross-section', exhaust.collector_cross_section_area) + compactSelect('Collector geometry', geometryMode, ['length', 'volume']) +
+          compactQuantity(geometryMode === 'length' ? 'Collector length' : 'Collector volume', geometry) + compactQuantity('Primary tube length', exhaust.primary_tube_length) +
+          compactNumber('Velocity decay', exhaust.velocity_decay_01) + '</div></article>';
+      }).join('');
+      const exhaustRestrictions = engine.exhausts.map(function (exhaust) {
+        return '<section class="restrictionSet"><strong>' + esc(exhaust.id) + '</strong>' +
+          restrictionEditor('Outlet', exhaust.outlet_restriction) + restrictionEditor('Primary', exhaust.primary_restriction) + '</section>';
+      }).join('');
+      return '<div class="mechanismFlow"><div class="flowNode"><strong>Throttle inlet</strong>' + esc(intake.id) + '</div><span class="flowArrow">→</span><div class="flowNode"><strong>Plenum & runners</strong>' + esc(intake.plenum_volume.value) + ' ' + esc(intake.plenum_volume.unit) + '</div><span class="flowArrow">→</span><div class="flowNode"><strong>Intake port</strong>' + esc(intakePort.id) + '</div><span class="flowArrow">→</span><div class="flowNode"><strong>Combustion chamber</strong>' + esc(head.chamber_volume.value) + ' ' + esc(head.chamber_volume.unit) + '</div><span class="flowArrow">→</span><div class="flowNode"><strong>Exhaust port</strong>' + esc(exhaustPort.id) + '</div><span class="flowArrow">→</span><div class="flowNode"><strong>Collectors</strong>' + engine.exhausts.length + ' banks</div></div>' +
+        semanticGroup('Intake system', 'Geometry, idle behavior, mixture, and three calibrated restrictions', '<div class="semanticFields four">' + compactText('Definition ID', intake.id) +
+          compactQuantity('Plenum volume', intake.plenum_volume) + compactQuantity('Plenum cross-section', intake.plenum_cross_section_area) + compactQuantity('Runner length', intake.runner_length) +
+          compactNumber('Idle throttle position', intake.idle_throttle_position_01) + compactNumber('Runner velocity decay', intake.runner_velocity_decay_01) + compactNumber('Main mixture lambda', intake.main_mixture_lambda) +
+          '</div><div class="semanticTableWrap"><table class="semanticTable"><thead><tr><th>Restriction</th><th>Model</th><th>Rated flow / area</th><th>Standard / coefficient</th><th>Pressure drop</th></tr></thead><tbody>' +
+          restrictionCells('Main inlet', intake.main_restriction) + restrictionCells('Idle bypass', intake.idle_bypass_restriction) + restrictionCells('Runner', intake.runner_restriction) + '</tbody></table></div>',
+          { label: '+ Add intake definition', toast: 'Add a complete intake system' }) +
+        semanticGroup('Head and ports', 'Chamber, valvetrain binding, runner geometry, and flow evidence', '<div class="semanticFields">' + compactText('Head ID', head.id) + compactQuantity('Chamber volume', head.chamber_volume) +
+          compactSelect('Valvetrain', head.valvetrain, ids(engine.valvetrains)) + compactSelect('Assigned intake port', head.ports[0], ids(engine.ports)) + compactSelect('Assigned exhaust port', head.ports[1], ids(engine.ports)) + '</div><div class="semanticTableWrap"><table class="semanticTable"><thead><tr><th>Port</th><th>Side</th><th>Head</th><th>Runner volume</th><th>Cross-section</th><th>Flow curve</th></tr></thead><tbody>' + portRows + '</tbody></table></div>',
+          { label: '+ Add head or port definition', toast: 'Add a typed head or port definition' }) +
+        semanticGroup('Exhaust systems', 'Collector geometry and calibrated gas-flow losses for each bank', '<div class="semanticSplit">' + exhaustCards + '</div>' +
+          '<div class="restrictionHeader"><strong>Flow restrictions</strong><span>Outlet and primary-tube losses remain independent</span></div><div class="restrictionList">' + exhaustRestrictions + '</div>',
+          { label: '+ Add exhaust definition', toast: 'Add an exhaust system' }) + contextualCurveEditor('Port flow calibration', flowCurves);
+    }
+
+    function camProfileCard(label, lobes) {
+      const lobe = lobes[0];
+      const type = lobe.type;
+      const fields = type === 'harmonic'
+        ? compactQuantity('Duration at reference lift', lobe.duration_at_reference_lift) + compactQuantity('Reference lift', lobe.reference_lift) + compactQuantity('Maximum lift', lobe.maximum_lift) + compactNumber('Profile gamma', lobe.gamma) + compactNumber('Sample count', lobe.sample_count)
+        : compactSelect('Lift curve', lobe.lift_curve, ids(engine.curves));
+      return '<article class="semanticCard"><strong>' + esc(label) + ' profile · ' + lobes.length + ' lobes</strong><div class="semanticFields two">' +
+        compactSelect('Profile type', type, ['harmonic', 'sampled']) + fields + '</div></article>';
+    }
+
+    function renderValvetrainEditor() {
+      const valvetrain = engine.valvetrains[0];
+      const intakeLobes = engine.cam_lobes.filter(function (lobe) { return lobe.port_kind === 'intake'; });
+      const exhaustLobes = engine.cam_lobes.filter(function (lobe) { return lobe.port_kind === 'exhaust'; });
+      const lobeRows = engine.cylinders.map(function (cylinder) {
+        const intake = intakeLobes.find(function (lobe) { return lobe.cylinder === cylinder.id; });
+        const exhaust = exhaustLobes.find(function (lobe) { return lobe.cylinder === cylinder.id; });
+        return '<tr><td class="rowName">' + esc(cylinder.id.replace('cylinder-', 'Cylinder ')) + '</td><td><input type="text" value="' + esc(intake.id) + '"></td><td>' + renderQuantityCell(intake.centerline, intake.id + ' centerline') + '</td><td><input type="text" value="' + esc(exhaust.id) + '"></td><td>' + renderQuantityCell(exhaust.centerline, exhaust.id + ' centerline') + '</td></tr>';
+      }).join('');
+      const camCards = engine.camshafts.map(function (cam) {
+        return '<article class="semanticCard"><strong>' + esc(cam.id) + '</strong><div class="semanticFields two">' + compactText('Camshaft ID', cam.id) + compactQuantity('Advance', cam.advance) + compactQuantity('Base radius', cam.base_radius) +
+          '<div class="compactField wide"><label>Lobe sequence · authored order</label><div class="inlineList">' + cam.lobes.map(function (lobe, index) { return '<div class="inlineListRow"><span>' + (index + 1) + '</span>' + selectHtml(lobe, ids(engine.cam_lobes), cam.id + ' lobe ' + (index + 1)) + '<button class="removeItem" data-toast="Remove lobe assignment">×</button></div>'; }).join('') + '</div></div></div></article>';
+      }).join('');
+      let binding;
+      if (valvetrain.type === 'vtec') {
+        binding = '<div class="semanticFields refs4">' + compactText('Definition ID', valvetrain.id) + compactSelect('Type', valvetrain.type, ['standard', 'vtec']) +
+          compactSelect('Base intake cam', valvetrain.base_intake_camshaft, ids(engine.camshafts)) + compactSelect('Base exhaust cam', valvetrain.base_exhaust_camshaft, ids(engine.camshafts)) +
+          compactSelect('Alternate intake cam', valvetrain.alternate_intake_camshaft, ids(engine.camshafts)) + compactSelect('Alternate exhaust cam', valvetrain.alternate_exhaust_camshaft, ids(engine.camshafts)) +
+          compactQuantity('Minimum engine speed', valvetrain.activation.minimum_engine_speed) + compactQuantity('Minimum manifold pressure', valvetrain.activation.minimum_manifold_pressure_abs) +
+          compactNumber('Minimum throttle opening', valvetrain.activation.minimum_throttle_linkage_opening_01) +
+          '<p class="strategyNote"><strong>VTEC strategy:</strong> the alternate cam pair becomes active only after the engine-speed, manifold-pressure, and throttle thresholds are all met.</p></div>';
+      } else {
+        binding = '<div class="semanticFields refs4">' + compactText('Definition ID', valvetrain.id) + compactSelect('Type', valvetrain.type, ['standard', 'vtec']) +
+          compactSelect('Intake camshaft', valvetrain.intake_camshaft, ids(engine.camshafts)) + compactSelect('Exhaust camshaft', valvetrain.exhaust_camshaft, ids(engine.camshafts)) +
+          '<p class="strategyNote"><strong>Standard strategy:</strong> one intake/exhaust camshaft pair controls every operating condition. VTEC instead switches between base and alternate pairs when speed, manifold pressure, and throttle thresholds are all met.</p></div>';
+      }
+      const sampledCurves = engine.curves.filter(function (curve) { return engine.cam_lobes.some(function (lobe) { return lobe.type === 'sampled' && lobe.lift_curve === curve.id; }); });
+      return '<div class="mechanismFlow"><div class="flowNode"><strong>Timing source</strong>Crank angle</div><span class="flowArrow">→</span><div class="flowNode"><strong>Camshafts</strong>' + engine.camshafts.length + ' shafts</div><span class="flowArrow">→</span><div class="flowNode"><strong>Lobe profiles</strong>' + engine.cam_lobes.length + ' cylinder events</div><span class="flowArrow">→</span><div class="flowNode"><strong>Ports</strong>Intake + exhaust</div></div>' +
+        semanticGroup('Valvetrain selection', 'Standard and VTEC are explicit typed mechanisms', binding, { label: '+ Add valvetrain definition', toast: 'Add a standard or VTEC valvetrain' }) +
+        semanticGroup('Valve-event profiles', 'Shared shape parameters are authored once; cylinder timing stays explicit', '<div class="semanticSplit">' + camProfileCard('Intake', intakeLobes) + camProfileCard('Exhaust', exhaustLobes) + '</div><div class="semanticTableWrap"><table class="semanticTable"><thead><tr><th>Cylinder</th><th>Intake lobe ID</th><th>Intake centerline</th><th>Exhaust lobe ID</th><th>Exhaust centerline</th></tr></thead><tbody>' + lobeRows + '</tbody></table></div>',
+          { label: '+ Add cam-lobe definition', toast: 'Add a sampled or harmonic cam lobe' }) +
+        semanticGroup('Camshafts and lobe order', 'Advance and base radius apply at the shaft; lobe references preserve authored order', '<div class="semanticSplit">' + camCards + '</div>', { label: '+ Add camshaft definition', toast: 'Add a camshaft definition' }) +
+        contextualCurveEditor('Sampled lift curves', sampledCurves);
+    }
+
+    function renderFuelEditor() {
+      const fuel = engine.fuels.find(function (item) { return item.id === engine.default_fuel; }) || engine.fuels[0];
+      const flameCurves = engine.curves.filter(function (curve) { return curve.id === fuel.turbulence_to_flame_speed; });
+      const density = fuel.density ? compactQuantity('Density', fuel.density) : optionalControl('Fuel density', 'Add optional fuel density', 'Stored when density is part of the authored fuel definition.');
+      return '<div class="mechanismFlow"><div class="flowNode"><strong>Fuel chemistry</strong>' + esc(fuel.display_name) + '</div><span class="flowArrow">→</span><div class="flowNode"><strong>Mixture</strong>' + esc(fuel.stoichiometric_air_fuel_molar_ratio) + ':1 molar AFR</div><span class="flowArrow">→</span><div class="flowNode"><strong>Flame response</strong>' + esc(fuel.turbulence_to_flame_speed) + '</div><span class="flowArrow">→</span><div class="flowNode"><strong>Cycle work</strong>' + Math.round(fuel.combustion.maximum_efficiency_01 * 100) + '% max efficiency</div></div>' +
+        semanticGroup('Fuel chemistry', 'Definition, energy content, stoichiometry, and default selection', '<div class="semanticFields four">' +
+          compactSelect('Default fuel', engine.default_fuel, ids(engine.fuels)) + compactText('Fuel ID', fuel.id) + compactText('Display name', fuel.display_name) +
+          compactQuantity('Molecular mass', fuel.molecular_mass) + density + compactQuantity('Lower heating value', fuel.lower_heating_value) +
+          compactNumber('Stoichiometric air/fuel molar ratio', fuel.stoichiometric_air_fuel_molar_ratio) + compactSelect('Turbulence-to-flame-speed curve', fuel.turbulence_to_flame_speed, ids(engine.curves)) + '</div>',
+          { label: '+ Add fuel definition', toast: 'Add a complete fuel definition' }) +
+        semanticGroup('Combustion behavior', 'Efficiency, repeatability, turbulence, and dilution effects', '<div class="semanticFields">' +
+          compactNumber('Maximum efficiency', fuel.combustion.maximum_efficiency_01) + compactNumber('Cycle variation', fuel.combustion.cycle_variation_01) +
+          compactNumber('Low-efficiency attenuation', fuel.combustion.low_efficiency_attenuation_01) + compactNumber('Maximum turbulence effect', fuel.combustion.maximum_turbulence_effect) +
+          compactNumber('Maximum dilution effect', fuel.combustion.maximum_dilution_effect) + '</div>') + contextualCurveEditor('Flame-speed response', flameCurves);
+    }
+
+    function renderControlsEditor() {
+      const ignition = engine.ignition;
+      const timingCurves = engine.curves.filter(function (curve) { return curve.id === ignition.timing_curve; });
+      const wires = ignition.wires.map(function (wire) { return '<div class="compactField"><label>' + esc(wire.id.replace('wire-', 'Wire ')) + '</label><input type="text" value="' + esc(wire.id) + '"></div>'; }).join('');
+      const firing = ignition.firing_order.map(function (event, index) {
+        return '<article class="firingEvent"><strong>' + (index + 1) + '</strong>' + selectHtml(event.wire, referenceOptions.wire, 'Firing event ' + (index + 1) + ' wire') +
+          '<input aria-label="Firing event ' + (index + 1) + ' crank angle" type="number" step="any" value="' + esc(event.crank_angle.value) + '">' +
+          selectHtml(event.crank_angle.unit, unitFamilies[event.crank_angle.unit] || [event.crank_angle.unit], 'Firing event angle unit') + '</article>';
+      }).join('');
+      const controller = (engine.throttle_controllers || [])[0];
+      let throttleFields = '';
+      if (controller) {
+        throttleFields = '<div class="semanticFields four">' + compactSelect('Active controller', engine.throttle_controller, ids(engine.throttle_controllers)) + compactText('Controller ID', controller.id) +
+          compactSelect('Controller type', controller.type, ['direct', 'governor']) + compactNumber('Response gamma', controller.gamma);
+        if (controller.type === 'governor') throttleFields += compactQuantity('Minimum engine speed', controller.minimum_engine_speed) + compactQuantity('Maximum engine speed', controller.maximum_engine_speed) + compactNumber('Minimum velocity', controller.minimum_velocity) + compactNumber('Maximum velocity', controller.maximum_velocity) + compactNumber('Proportional gain', controller.k_s) + compactNumber('Derivative gain', controller.k_d) + '<p class="strategyNote"><strong>Governor strategy:</strong> throttle is adjusted within the configured speed and velocity limits using proportional and derivative response.</p>';
+        else throttleFields += '<p class="strategyNote"><strong>Direct strategy:</strong> accelerator input maps directly to throttle with gamma shaping. Governor control instead regulates a configured speed band using proportional and derivative response.</p>';
+        throttleFields += '</div>';
+      } else throttleFields = '<p class="topologyNote">No throttle controller is selected.</p>';
+      const starter = engine.starter;
+      const starterFields = '<div class="semanticFields">' + compactSelect('Starter type', starter.type, ['mechanically_disengaged', 'cranking']) +
+        (starter.type === 'cranking' ? compactQuantity('Cranking torque', starter.torque) + compactQuantity('Target cranking speed', starter.target_speed) : '') + '</div>';
+      return semanticGroup('Firing sequence', 'Ordered crank-angle events; never a free-text firing-order string', '<div class="semanticFields four">' + wires + '</div><div class="firingTimeline">' + firing + '</div>',
+          { label: '+ Add ignition wire or firing event', toast: 'Add a structured ignition binding' }) +
+        semanticGroup('Limiter', 'Hard speed threshold and cut interval', '<div class="semanticFields two">' + compactQuantity('Activation speed', ignition.limiter.activation_speed) + compactQuantity('Cut duration', ignition.limiter.cut_duration) + '</div>') +
+        contextualCurveEditor('Ignition timing', timingCurves) + semanticGroup('Throttle behavior', 'Direct linkage or governed speed control', throttleFields,
+          { label: '+ Add throttle-controller definition', toast: 'Add a direct or governor throttle controller' }) + semanticGroup('Starter hardware', 'Mechanically disengaged or active cranking model', starterFields);
+    }
+
+    function renderVehicleEditor() {
+      const rig = sourceDocument.rig;
+      const vehicle = rig.vehicle;
+      const transmission = rig.transmission;
+      const losses = engine.losses;
+      const brake = vehicle.maximum_service_brake_force ? compactQuantity('Maximum service-brake force', vehicle.maximum_service_brake_force) : optionalControl('Service-brake capacity', 'Add service-brake capacity', 'Sets the maximum physical braking force available on the live vehicle bench.');
+      const gears = transmission.gears.map(function (gear, index) {
+        return '<tr><td class="rowName">' + (index + 1) + '</td><td><input type="text" value="' + esc(gear.id) + '"></td><td><input type="number" step="any" value="' + esc(gear.ratio) + '"><div class="ratioBar"><i style="width:' + Math.min(100, gear.ratio / transmission.gears[0].ratio * 100) + '%"></i></div></td><td>' + (vehicle.differential_ratio * gear.ratio).toFixed(3) + ':1</td></tr>';
+      }).join('');
+      const accessory = engine.accessory_configurations[0];
+      return '<div class="mechanismFlow"><div class="flowNode"><strong>Engine output</strong>' + esc(engine.output_crankshaft) + '</div><span class="flowArrow">→</span><div class="flowNode"><strong>Clutch</strong>' + esc(transmission.maximum_clutch_torque.value) + ' ' + esc(transmission.maximum_clutch_torque.unit) + '</div><span class="flowArrow">→</span><div class="flowNode"><strong>Transmission</strong>' + transmission.gears.length + ' forward gears</div><span class="flowArrow">→</span><div class="flowNode"><strong>Differential</strong>' + esc(vehicle.differential_ratio) + ':1</div><span class="flowArrow">→</span><div class="flowNode"><strong>Tires</strong>' + esc(vehicle.tire_radius.value) + ' ' + esc(vehicle.tire_radius.unit) + '</div></div>' +
+        semanticGroup('Vehicle road load', 'Mass, aero, tires, rolling resistance, and service braking used by the live bench', '<div class="semanticFields four">' +
+          compactText('Rig ID', rig.id) + compactText('Vehicle ID', vehicle.id) + compactQuantity('Vehicle mass', vehicle.mass) + compactNumber('Drag coefficient', vehicle.drag_coefficient) +
+          compactQuantity('Frontal area', vehicle.frontal_area) + compactNumber('Differential ratio', vehicle.differential_ratio) + compactQuantity('Tire radius', vehicle.tire_radius) +
+          compactQuantity('Rolling resistance force', vehicle.rolling_resistance_force) + brake + '</div>') +
+        semanticGroup('Transmission and gears', 'Authored order is the forward-gear ordinal used by the live bench', '<div class="semanticFields two">' + compactText('Transmission ID', transmission.id) + compactQuantity('Maximum clutch torque', transmission.maximum_clutch_torque) +
+          '</div><div class="semanticTableWrap"><table class="semanticTable"><thead><tr><th>Gear</th><th>Stable ID</th><th>Ratio</th><th>Overall ratio</th></tr></thead><tbody>' + gears + '</tbody></table></div>',
+          { label: '+ Add forward gear', toast: 'Add a typed forward gear in authored order' }) +
+        semanticGroup('Mechanical losses', 'Chen–Flynn cycle-mean friction plus packaged accessory evidence', '<div class="semanticFields four">' +
+          compactSelect('Loss model', losses.type, ['chen_flynn_cycle_mean']) + compactQuantity('Constant FMEP', losses.constant_fmep) + compactNumber('Peak-pressure coefficient', losses.peak_pressure_coefficient) +
+          compactQuantity('Mean-piston-speed coefficient', losses.mean_piston_speed_coefficient) + compactQuantity('Squared-speed coefficient', losses.mean_piston_speed_squared_coefficient) +
+          compactQuantity('Required oil temperature', losses.required_oil_temperature) + compactSelect('Accessory profile', losses.accessory_configuration_id, ids(engine.accessory_configurations)) +
+          '</div><p class="resourcePurpose"><strong>' + esc(humanize(accessory.id)) + '</strong> · Packaged accessory-loss evidence. File location and integrity hash are managed by the package.</p>',
+          { label: '+ Add accessory profile', toast: 'Choose another packaged accessory-loss profile' });
+    }
+
+    function renderAudioEditor() {
+      const p = presentation;
+      const routeRows = engine.source_routes.map(function (route) {
+        const source = route.type === 'exhaust' ? selectHtml(route.exhaust, ids(engine.exhausts), route.id + ' exhaust') : '<input type="text" value="' + esc(route.component) + '">';
+        return '<tr><td><input type="text" value="' + esc(route.id) + '"></td><td>' + selectHtml(route.type, ['exhaust', 'mechanical'], route.id + ' source type') + '</td><td>' + source + '</td></tr>';
+      }).join('');
+      const cylinderRows = p.cylinder_routes.map(function (route) {
+        return '<tr><td class="rowName">' + esc(route.cylinder.replace('cylinder-', 'Cylinder ')) + '</td><td>' + selectHtml(route.route, ids(engine.source_routes), route.cylinder + ' source route') + '</td><td><input type="number" step="any" value="' + esc(route.gain_linear) + '"></td></tr>';
+      }).join('');
+      const routeMixRows = p.routes.map(function (route) {
+        return '<tr><td class="rowName">' + esc(route.route) + '</td><td><input type="number" step="any" value="' + esc(route.source_gain_linear) + '"></td><td>' +
+          selectHtml(route.impulse_response || '', ids(p.assets), route.route + ' impulse response') + '</td><td><input type="number" step="any" value="' + esc(route.impulse_response_gain_linear) + '"></td><td><input type="number" min="0" max="1" step=".01" value="' + esc(route.wet_mix_01) + '"></td></tr>';
+      }).join('');
+      const busRows = p.buses.map(function (bus) {
+        const routes = bus.routes.map(function (route, index) { return '<div class="inlineListRow"><span>' + (index + 1) + '</span>' + selectHtml(route, ids(engine.source_routes), bus.id + ' route ' + (index + 1)) + '<button class="removeItem" data-toast="Remove bus route">×</button></div>'; }).join('');
+        return '<tr><td><input type="text" value="' + esc(bus.id) + '"></td><td><div class="inlineList">' + routes + '<button class="arrayAdd" data-toast="Add route to bus">+ Route</button></div></td><td><input type="number" step="any" value="' + esc(bus.gain_linear) + '"></td><td><input type="checkbox" ' + (bus.publish ? 'checked' : '') + '></td></tr>';
+      }).join('');
+      const auditionBuses = p.audition.buses.map(function (bus, index) { return '<div class="inlineListRow"><span>' + (index + 1) + '</span>' + selectHtml(bus, ids(p.buses), 'Audition bus ' + (index + 1)) + '<button class="removeItem" data-toast="Remove audition bus">×</button></div>'; }).join('');
+      const asset = p.assets[0];
+      return '<div class="mechanismFlow"><div class="flowNode"><strong>Cylinder pressure</strong>' + p.cylinder_routes.length + ' assignments</div><span class="flowArrow">→</span><div class="flowNode"><strong>Source routes</strong>' + engine.source_routes.length + ' exhaust banks</div><span class="flowArrow">→</span><div class="flowNode"><strong>Route character</strong>Gain + IR + wet mix</div><span class="flowArrow">→</span><div class="flowNode"><strong>Output buses</strong>' + p.buses.length + ' published mixes</div></div>' +
+        semanticGroup('Simulation sources', 'Where physical engine output enters the presentation graph', '<div class="semanticTableWrap"><table class="semanticTable"><thead><tr><th>Route ID</th><th>Source type</th><th>Physical source</th></tr></thead><tbody>' + routeRows + '</tbody></table></div><p class="capabilityNote"><strong>Mechanical source routes are schema-authorable.</strong> The current live/bake executor accepts exhaust routes; the editor preserves the typed mechanical variant without pretending it is audible yet.</p>',
+          { label: '+ Add simulation source', toast: 'Add an exhaust or mechanical source route' }) +
+        semanticGroup('Cylinder routing', 'Each physical cylinder is assigned to a source route with explicit gain', '<div class="semanticTableWrap"><table class="semanticTable"><thead><tr><th>Cylinder</th><th>Route</th><th>Gain</th></tr></thead><tbody>' + cylinderRows + '</tbody></table></div>') +
+        semanticGroup('Exhaust character', 'Package resources are selected semantically; file paths and hashes stay hidden', '<div class="semanticFields three">' + compactSelect('Impulse response', asset.id, ids(p.assets)) + compactSelect('Resource kind', asset.kind, ['impulse_response', 'audio_sample']) +
+          '<div class="compactField"><label>Character</label><div class="resourcePurpose"><strong>Smooth 39</strong> · Damped, darker response with short decay.</div></div></div><div class="semanticTableWrap"><table class="semanticTable"><thead><tr><th>Route</th><th>Dry source gain</th><th>Impulse response</th><th>IR gain</th><th>Wet mix</th></tr></thead><tbody>' + routeMixRows + '</tbody></table></div>',
+          { label: '+ Add packaged audio resource', toast: 'Choose a packaged impulse response or audio sample' }) +
+        semanticGroup('Conditioning and output', 'Global source conditioning, bus publication, and editor audition', '<div class="semanticFields four">' +
+          compactNumber('Jitter scale', p.conditioning.jitter_scale) + compactQuantity('Jitter cutoff', p.conditioning.jitter_modulation_cutoff_frequency) +
+          compactNumber('Derivative mix', p.conditioning.derivative_mix_01) + compactNumber('Air-noise mix', p.conditioning.air_noise_mix_01) + compactQuantity('Air-noise cutoff', p.conditioning.air_noise_cutoff_frequency) +
+          compactNumber('Publication gain', p.publication_gain_linear) + compactNumber('Audition volume', p.audition.volume_linear) + compactQuantity('Fade in', p.audition.fade_in) + compactQuantity('Fade out', p.audition.fade_out) +
+          '<div class="compactField wide"><label>Audition buses · ordered mix</label><div class="inlineList">' + auditionBuses + '<button class="arrayAdd" data-toast="Add audition bus">+ Bus</button></div></div></div><div class="semanticTableWrap"><table class="semanticTable"><colgroup><col style="width:160px"><col style="width:250px"><col style="width:110px"><col style="width:64px"></colgroup><thead><tr><th>Bus ID</th><th>Routes · ordered</th><th>Gain</th><th>Publish</th></tr></thead><tbody>' + busRows + '</tbody></table></div>',
+          { label: '+ Add output bus', toast: 'Add a presentation output bus' });
+    }
+
+    function renderArray(label, values, path) {
+      if (path.endsWith('.samples')) return renderSamples(label, values, path);
+      if (path.endsWith('.firing_order')) return renderFiringOrder(label, values, path);
+      if (values.length === 0 || values.every(function (value) { return value === null || typeof value !== 'object'; })) {
+        return renderPrimitiveArray(label, values, path);
+      }
+      return renderObjectArray(label, values, path);
+    }
+
+    function renderNested(label, value, path, root) {
+      const className = root ? 'rootBlock' : 'nestedBlock';
+      const titleClass = root ? 'groupTitle' : 'nestedTitle';
+      const bodyClass = root ? 'objectBody' : 'nestedBody';
+      return '<section class="' + className + '"><div class="' + titleClass + '"><span>' + esc(humanize(label)) + '</span></div><div class="' + bodyClass + '">' +
+        renderObjectFields(value, path) + '</div></section>';
+    }
+
+    function renderValue(label, value, path, root) {
+      if (isQuantity(value)) return renderQuantity(label, value, path);
+      if (Array.isArray(value)) {
+        const rendered = renderArray(label, value, path);
+        return root ? '<section class="rootBlock">' + rendered + '</section>' : rendered;
+      }
+      if (value && typeof value === 'object') return renderNested(label, value, path, Boolean(root));
+      const rendered = renderPrimitive(label, value, path);
+      return root ? '<section class="rootBlock"><div class="groupTitle"><span>' + esc(humanize(label)) + '</span></div><div class="objectBody">' + rendered + '</div></section>' : rendered;
+    }
+
+    const nav = document.querySelector('#nav');
+    const sectionTitle = document.querySelector('#sectionTitle');
+    const sectionDescription = document.querySelector('#sectionDescription');
+    const sectionContent = document.querySelector('#sectionContent');
+    const dirtyState = document.querySelector('#dirtyState');
+    const toast = document.querySelector('#toast');
+    const requestedSection = location.hash.slice(1);
+    let selectedSection = sections.some(function (section) { return section.id === requestedSection; }) ? requestedSection : 'cylinders';
+    let toastTimer;
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 1700);
+    }
+
+    function renderNav() {
+      nav.innerHTML = sections.map(function (section) {
+        return '<button class="navItem ' + (section.id === selectedSection ? 'active' : '') + '" data-section="' + section.id + '"><span class="dot"></span><span>' + esc(section.label) + '</span></button>';
+      }).join('');
+    }
+
+    function renderSection() {
+      const section = sections.find(function (item) { return item.id === selectedSection; });
+      sectionTitle.textContent = section.label;
+      sectionDescription.textContent = section.description;
+      const renderers = {
+        identity: renderEngineEditor,
+        cylinders: renderCylinderTopology,
+        rotating: renderRotatingEditor,
+        airflow: renderAirflowEditor,
+        valvetrain: renderValvetrainEditor,
+        fuel: renderFuelEditor,
+        controls: renderControlsEditor,
+        vehicle: renderVehicleEditor,
+        audio: renderAudioEditor
+      };
+      sectionContent.innerHTML = renderers[section.id]();
+      const previewView = new URLSearchParams(location.search).get('view');
+      if (previewView) {
+        requestAnimationFrame(function () {
+          if (previewView === 'bottom') sectionContent.scrollTop = sectionContent.scrollHeight;
+          else {
+            const target = sectionContent.querySelector('[data-group="' + previewView + '"]');
+            if (target) target.scrollIntoView({ block: 'start' });
+          }
+        });
+      }
+    }
+
+    nav.addEventListener('click', function (event) {
+      const button = event.target.closest('[data-section]');
+      if (!button) return;
+      selectedSection = button.dataset.section;
+      renderNav();
+      renderSection();
+    });
+
+    sectionContent.addEventListener('input', function () {
+      dirtyState.textContent = 'Modified';
+      dirtyState.style.color = 'var(--orange)';
+    });
+    sectionContent.addEventListener('click', function (event) {
+      const button = event.target.closest('[data-toast]');
+      if (button) showToast(button.dataset.toast);
+    });
+
+    document.querySelectorAll('button[data-toast]').forEach(function (button) {
+      button.addEventListener('click', function () { showToast(button.dataset.toast); });
+    });
+    document.querySelector('#save').addEventListener('click', function () {
+      dirtyState.textContent = 'Saved';
+      dirtyState.style.color = '';
+      showToast('Engine saved');
+    });
+    document.querySelector('#bake').addEventListener('click', function () {
+      showToast('Bake started from the current validated engine');
+    });
+
+    const throttle = document.querySelector('#throttle');
+    const brake = document.querySelector('#brake');
+    const clutchControl = document.querySelector('#clutchControl');
+    const clutchOut = document.querySelector('#clutchOut');
+    const gearSelect = document.querySelector('#gearSelect');
+    const throttleOut = document.querySelector('#throttleOut');
+    const brakeOut = document.querySelector('#brakeOut');
+    const rpm = document.querySelector('#rpm');
+    const tachFill = document.querySelector('#tachFill');
+    const speed = document.querySelector('#speed');
+    const gear = document.querySelector('#gear');
+    const clutch = document.querySelector('#clutch');
+    const torque = document.querySelector('#torque');
+    const power = document.querySelector('#power');
+    const headroom = document.querySelector('#headroom');
+    const startButton = document.querySelector('#start');
+    let running = false;
+
+    function updateBench() {
+      const accelerator = Number(throttle.value) / 100;
+      const braking = Number(brake.value) / 100;
+      const gearOrdinal = Number(gearSelect.value);
+      const clutchEngagement = Number(clutchControl.value) / 100;
+      const inGear = gearOrdinal > 0 && clutchEngagement > 0;
+      const rpmValue = running ? Math.round(650 + accelerator * (inGear ? 4550 : 5350)) : 0;
+      const gearValue = gearOrdinal === 0 ? 'N' : String(gearOrdinal);
+      const speedValue = inGear && running ? Math.max(0, Math.round(accelerator * 138 / Math.max(1, gearOrdinal * .72) - braking * 92)) : 0;
+      throttleOut.value = Math.round(accelerator * 100) + '%';
+      brakeOut.value = Math.round(braking * 100) + '%';
+      clutchOut.value = Math.round(clutchEngagement * 100) + '%';
+      rpm.value = rpmValue.toLocaleString();
+      tachFill.style.width = Math.min(100, rpmValue / 6500 * 100) + '%';
+      speed.textContent = speedValue + ' km/h';
+      gear.textContent = gearValue;
+      clutch.textContent = clutchEngagement >= .98 ? 'locked' : clutchEngagement <= .02 ? 'open' : Math.round(clutchEngagement * 100) + '%';
+      torque.textContent = running ? 'live' : '—';
+      power.textContent = running ? 'live' : '—';
+      headroom.textContent = running ? 'live' : '—';
+    }
+
+    throttle.addEventListener('input', updateBench);
+    brake.addEventListener('input', updateBench);
+    clutchControl.addEventListener('input', updateBench);
+    gearSelect.addEventListener('change', updateBench);
+    startButton.addEventListener('click', function () {
+      running = !running;
+      startButton.textContent = running ? 'Stop' : 'Start';
+      updateBench();
+    });
+    document.querySelector('#reset').addEventListener('click', function () {
+      throttle.value = 10;
+      brake.value = 0;
+      clutchControl.value = 0;
+      gearSelect.value = 0;
+      updateBench();
+    });
+
+    renderNav();
+    renderSection();
+    updateBench();
+  </script>
+
+</body>
+</html>

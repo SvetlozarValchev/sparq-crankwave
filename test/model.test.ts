@@ -15,28 +15,24 @@ const SOURCE = `{
     "identity": {"id": "fixture-v8", "display_name": "Fixture V8"},
     "layout": "v_engine",
     "limits": {"redline": {"value": 7000, "unit": "rpm"}},
-    "cylinders": [{}, {}, {}, {}, {}, {}, {}, {}],
-    "future_executor_field": {"kept": [1, 2, 3]}
+    "cylinders": [{}, {}, {}, {}, {}, {}, {}, {}]
   },
-  "future_root_field": "also-kept"
+  "presentation": {}
 }`;
 
 describe('Vehicle Engine Lab engine source model', () => {
-  it('inspects the complete Engine Sim envelope without projecting persistence fields', () => {
+  it('inspects the closed Vehicle Engine authoring envelope', () => {
     const parsed = parseEngineSource(SOURCE);
 
     expect(parsed.summary.id).toBe('fixture-v8');
     expect(parsed.summary.cylinders).toBe(8);
     expect(parsed.summary.redlineRpm).toBe(7000);
-    expect(JSON.stringify(parsed.document).includes('future_executor_field')).toBe(true);
-    expect(JSON.stringify(parsed.document).includes('future_root_field')).toBe(true);
   });
 
   it('formats the complete parsed document and admits only project engine paths', () => {
     const formatted = formatEngineSource(SOURCE);
 
-    expect(formatted.includes('future_executor_field')).toBe(true);
-    expect(formatted.includes('future_root_field')).toBe(true);
+    expect(formatted.includes('"display_name": "Fixture V8"')).toBe(true);
     expect(formatted.endsWith('\n')).toBe(true);
     expect(isVehicleEngineProjectPath('vehicle-engines/fixture.vehicle-engine.json')).toBe(true);
     expect(isVehicleEngineProjectPath('vehicle-engines/v8/fixture.vehicle-engine.json')).toBe(true);
@@ -56,6 +52,14 @@ describe('Vehicle Engine Lab engine source model', () => {
     expect(() => parseEngineSource('{"schema":"studio/engine","engine":{}}')).toThrow(
       /engine-sim-offline\/engine/
     );
+    expect(() =>
+      parseEngineSource(SOURCE.replace('"presentation": {}', '"presentation": {}, "other": 1'))
+    ).toThrow(/unsupported field 'other'/);
+    expect(() =>
+      parseEngineSource(
+        SOURCE.replace('"cylinders":', '"not_an_engine_field": 1, "cylinders":')
+      )
+    ).toThrow(/unsupported field 'not_an_engine_field'/);
   });
 
   it('ships multiple exact full-schema presets from Engine Sim WASM', () => {

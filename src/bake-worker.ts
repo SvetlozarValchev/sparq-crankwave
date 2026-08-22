@@ -9,9 +9,18 @@ import type {
   BakeWorkerInboundMessage,
   BakeWorkerOutboundMessage,
 } from './bake-protocol';
+import { ENGINE_SIM_WASM_RELEASE_IDENTITY } from './resources';
 import { SHA256_CRYPTO, sha256, sha256Hex } from './sha256';
 
 let initialized = false;
+const TRANSFER_CHUNK_BYTES = 1024 * 1024;
+interface PendingCarrierTransfer {
+  readonly bytes: Uint8Array;
+  readonly metadata: import('./bake-protocol').BakedVehicleEngineMetadata;
+  readonly chunkCount: number;
+  nextChunkIndex: number;
+}
+let pendingCarrier: PendingCarrierTransfer | null = null;
 
 function post(message: BakeWorkerOutboundMessage, transfer: Transferable[] = []): void {
   const scope = globalThis as unknown as {
@@ -22,23 +31,6 @@ function post(message: BakeWorkerOutboundMessage, transfer: Transferable[] = [])
 
 function errorText(error: unknown): string {
   return error instanceof Error ? `${error.name}: ${error.message}` : String(error);
-}
-
-function releaseIdentity(catalogBytes: Uint8Array): string {
-  let value: unknown;
-  try {
-    value = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(catalogBytes));
-  } catch (error) {
-    throw new Error(`Vendored asset catalog is invalid: ${errorText(error)}`);
-  }
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-    throw new Error('Vendored asset catalog must be a JSON object');
-  }
-  const release = (value as Record<string, unknown>).release_identity;
-  if (typeof release !== 'string' || release.length === 0) {
-    throw new Error('Vendored asset catalog has no release identity');
-  }
-  return release;
 }
 
 async function initialize(message: BakeInitializeMessage): Promise<void> {
@@ -86,7 +78,7 @@ async function initialize(message: BakeInitializeMessage): Promise<void> {
       })),
       sharedStarterRuntimeJson: message.sharedStarterRuntimeJson,
       sharedStarterAudio: message.sharedStarterAudio,
-      releaseIdentity: releaseIdentity(catalogBytes),
+      releaseIdentity: ENGINE_SIM_WASM_RELEASE_IDENTITY,
       wasmModuleSha256: sha256(wasmBytes),
       assetCatalogSha256: sha256(catalogBytes),
     });
@@ -107,31 +99,75 @@ async function initialize(message: BakeInitializeMessage): Promise<void> {
     throw new Error('Baked carrier entry count changed during runtime verification');
   }
 
-  const bytes = baked.bytes.buffer as ArrayBuffer;
-  post(
-    {
+  if (baked.bytes.byteLength !== baked.byteCount) {
+    throw new Error(
+      `Baker returned ${baked.bytes.byteLength} carrier bytes but declared ${baked.byteCount}`
+    );
+  }
+  const metadata = Object.freeze({
+    engineId: baked.engineId,
+    profileId: baked.profileId,
+    byteCount: baked.byteCount,
+    entryCount: baked.entryCount,
+    heldCellCount: baked.heldCellCount,
+    directionalCaptureCount: baked.directionalCaptureCount,
+    lifecycleCaptureCount: baked.lifecycleCaptureCount,
+    containerSha256: baked.containerSha256,
+    cacheIdentitySha256: baked.cacheIdentitySha256,
+    verifiedEntryCount: verified.entries.length,
+    elapsedMs: performance.now() - started,
+  });
+  const chunkCount = Math.ceil(metadata.byteCount / TRANSFER_CHUNK_BYTES);
+  pendingCarrier = {
+    bytes: baked.bytes,
+    metadata,
+    chunkCount,
+    nextChunkIndex: 0,
+  };
+  post({
+    type: 'progress',
+    phase: 'verifying',
+    status: `Prepared ${chunkCount} verified carrier chunks for editor memory…`,
+  });
+  post({ type: 'begin', chunkCount, chunkByteLimit: TRANSFER_CHUNK_BYTES, metadata });
+}
+
+function pullChunk(index: number): void {
+  const transfer = pendingCarrier;
+  if (transfer === null || index !== transfer.nextChunkIndex) {
+    throw new Error('Vehicle engine carrier chunk pull was out of order');
+  }
+  if (index === transfer.chunkCount) {
+    post({
       type: 'complete',
-      bytes,
-      engineId: baked.engineId,
-      profileId: baked.profileId,
-      byteCount: baked.byteCount,
-      entryCount: baked.entryCount,
-      heldCellCount: baked.heldCellCount,
-      directionalCaptureCount: baked.directionalCaptureCount,
-      lifecycleCaptureCount: baked.lifecycleCaptureCount,
-      containerSha256: baked.containerSha256,
-      cacheIdentitySha256: baked.cacheIdentitySha256,
-      verifiedEntryCount: verified.entries.length,
-      elapsedMs: performance.now() - started,
-    },
-    [bytes]
+      chunkCount: transfer.chunkCount,
+      byteCount: transfer.metadata.byteCount,
+    });
+    pendingCarrier = null;
+    return;
+  }
+  const byteOffset = index * TRANSFER_CHUNK_BYTES;
+  const bytes = transfer.bytes.slice(
+    byteOffset,
+    Math.min(transfer.bytes.byteLength, byteOffset + TRANSFER_CHUNK_BYTES)
   );
+  transfer.nextChunkIndex += 1;
+  post({ type: 'chunk', index, count: transfer.chunkCount, byteOffset, bytes }, [bytes.buffer]);
 }
 
 addEventListener('message', (event: MessageEvent<BakeWorkerInboundMessage>) => {
   const message = event.data;
   if (message.type === 'dispose') {
     close();
+    return;
+  }
+  if (message.type === 'pull-chunk') {
+    try {
+      pullChunk(message.index);
+    } catch (error) {
+      pendingCarrier = null;
+      post({ type: 'error', error: errorText(error) });
+    }
     return;
   }
   void initialize(message).catch((error: unknown) => {

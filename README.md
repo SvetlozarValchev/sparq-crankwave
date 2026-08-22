@@ -18,12 +18,19 @@ values.
 The package is organized around four independent workflows:
 
 1. Edit and save/load project-local vehicle-engine JSON in the SPARQ editor.
-2. Run dyno, free-rev/geared tests, and audio audition through live
+2. Run a geared vehicle bench and audio audition through live
    `engine-sim-wasm` in the editor.
 3. Bake a project-local `*.vehicleengine` runtime asset.
-4. Drive a SPARQ vehicle using its mechanical output and audio runtime.
+4. Drive a SPARQ vehicle while its geared operating point drives the baked
+   audio runtime.
 
 `*.vehicleengine` outputs are stored as ordinary project files.
+
+The current baked carrier contains the responsive audio runtime. The live WASM
+bench also reports simulation-derived shaft torque and power, but those
+mechanical curves are not yet serialized into the carrier. Until that contract
+is added, the vehicle test treats the authored clutch capacity as a drivetrain
+ceiling; it is not presented as an engine torque curve.
 
 ## Local development
 

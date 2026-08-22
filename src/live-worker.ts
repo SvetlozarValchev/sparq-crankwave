@@ -1,6 +1,6 @@
 import createEngineSimModule from '../vendor/engine-sim-wasm/engine-sim-offline';
-import { SessionExecutionKind } from '../vendor/engine-sim-wasm/runtime/c-api-abi';
-import { EngineSimCapiClient } from '../vendor/engine-sim-wasm/runtime/c-api-client';
+import { SessionExecutionKind } from '../vendor/engine-sim-wasm/live-runtime/c-api-abi';
+import { EngineSimCapiClient } from '../vendor/engine-sim-wasm/live-runtime/c-api-client';
 import { DeviceRateResampler } from '../vendor/engine-sim-wasm/runtime/device-resampler';
 import type {
   LiveEngineControls,
@@ -21,6 +21,9 @@ let lastPowerKw: number | null = null;
 
 let desiredControls: LiveEngineControls = {
   throttle: 0.1,
+  selectedGearOrdinal: 0,
+  clutchEngagement: 0,
+  serviceBrake: 0,
   ignition: true,
   fuel: true,
   limiter: true,
@@ -35,7 +38,21 @@ function post(message: LiveWorkerOutboundMessage, transfer: Transferable[] = [])
 }
 
 function errorText(error: unknown): string {
-  return error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+  if (!(error instanceof Error)) {
+    return String(error);
+  }
+  const diagnosticError = error as Error & {
+    readonly diagnostics?: readonly {
+      readonly jsonPointer?: string;
+      readonly message?: string;
+    }[];
+  };
+  const diagnostic = diagnosticError.diagnostics?.find((entry) => entry.message);
+  if (!diagnostic?.message) {
+    return `${error.name}: ${error.message}`;
+  }
+  const subject = diagnostic.jsonPointer ? `${diagnostic.jsonPointer}: ` : '';
+  return `${error.name}: ${error.message} · ${subject}${diagnostic.message}`;
 }
 
 function applyPendingControls(): void {
@@ -51,6 +68,15 @@ function applyPendingControls(): void {
 
   if (desiredControls.throttle !== appliedControls.throttle) {
     controls.push({ deliveryFrame, kind: 'throttle', value: desiredControls.throttle });
+  }
+  if (desiredControls.selectedGearOrdinal !== appliedControls.selectedGearOrdinal) {
+    controls.push({ deliveryFrame, kind: 'vehicle-selected-forward-gear', value: desiredControls.selectedGearOrdinal });
+  }
+  if (desiredControls.clutchEngagement !== appliedControls.clutchEngagement) {
+    controls.push({ deliveryFrame, kind: 'vehicle-clutch-engagement', value: desiredControls.clutchEngagement });
+  }
+  if (desiredControls.serviceBrake !== appliedControls.serviceBrake) {
+    controls.push({ deliveryFrame, kind: 'vehicle-service-brake-application', value: desiredControls.serviceBrake });
   }
   if (desiredControls.ignition !== appliedControls.ignition) {
     controls.push({ deliveryFrame, kind: 'ignition', value: desiredControls.ignition });
@@ -109,6 +135,7 @@ async function initialize(message: LiveInitializeMessage): Promise<void> {
     deliveryRateHz: descriptor.deliveryRateHz,
     preparationBlockCount: descriptor.preparationBlockCount,
     outputSampleRate: message.outputSampleRate,
+    forwardGears: program.session.forwardGears.map((gear) => ({ ordinal: gear.authoredOrdinal, id: gear.semanticId, ratio: gear.ratio })),
   });
 }
 
@@ -135,6 +162,9 @@ function renderNext(requestedBlockCount: number): void {
     let processedDeliveryFrames = 0;
     let latestRpm = 0;
     let latestLimiterCut = false;
+    let latestVehicleSpeedKmh = 0;
+    let latestGearOrdinal = desiredControls.selectedGearOrdinal;
+    let latestClutchEngagement = desiredControls.clutchEngagement;
 
     for (let index = 0; index < requestedBlockCount; ++index) {
       const block = program.session.processBlock();
@@ -174,6 +204,11 @@ function renderNext(requestedBlockCount: number): void {
       }
       latestRpm = telemetry?.engineSpeedRpm ?? cycle?.meanEngineSpeedRpm ?? latestRpm;
       latestLimiterCut = telemetry?.limiterCutActive ?? latestLimiterCut;
+      if (telemetry?.freeVehicle) {
+        latestVehicleSpeedKmh = telemetry.freeVehicle.vehicleSpeedMS * 3.6;
+        latestGearOrdinal = telemetry.freeVehicle.selectedForwardGearOrdinal ?? 0;
+        latestClutchEngagement = telemetry.freeVehicle.clutchEngagement01;
+      }
     }
     const renderMs = performance.now() - started;
 
@@ -202,6 +237,9 @@ function renderNext(requestedBlockCount: number): void {
         rpm: latestRpm,
         torqueNm: lastTorqueNm,
         powerKw: lastPowerKw,
+        vehicleSpeedKmh: latestVehicleSpeedKmh,
+        selectedGearOrdinal: latestGearOrdinal,
+        clutchEngagement: latestClutchEngagement,
         limiterCut: latestLimiterCut,
         renderMs,
         processedBlocks: requestedBlockCount,
@@ -238,6 +276,9 @@ addEventListener('message', (event: MessageEvent<LiveWorkerInboundMessage>) => {
       case 'controls':
         desiredControls = {
           throttle: Math.min(1, Math.max(0, message.throttle)),
+          selectedGearOrdinal: Math.max(0, Math.round(message.selectedGearOrdinal)),
+          clutchEngagement: Math.min(1, Math.max(0, message.clutchEngagement)),
+          serviceBrake: Math.min(1, Math.max(0, message.serviceBrake)),
           ignition: message.ignition,
           fuel: message.fuel,
           limiter: message.limiter,

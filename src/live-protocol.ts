@@ -1,5 +1,8 @@
 export interface LiveEngineControls {
   readonly throttle: number;
+  readonly selectedGearOrdinal: number;
+  readonly clutchEngagement: number;
+  readonly serviceBrake: number;
   readonly ignition: boolean;
   readonly fuel: boolean;
   readonly limiter: boolean;
@@ -35,6 +38,7 @@ export type LiveWorkerOutboundMessage =
       readonly deliveryRateHz: number;
       readonly preparationBlockCount: string;
       readonly outputSampleRate: number;
+      readonly forwardGears: readonly { readonly ordinal: number; readonly id: string; readonly ratio: number }[];
     }
   | {
       readonly type: 'preparing';
@@ -48,6 +52,9 @@ export type LiveWorkerOutboundMessage =
       readonly rpm: number;
       readonly torqueNm: number | null;
       readonly powerKw: number | null;
+      readonly vehicleSpeedKmh: number;
+      readonly selectedGearOrdinal: number;
+      readonly clutchEngagement: number;
       readonly limiterCut: boolean;
       readonly renderMs: number;
       readonly processedBlocks: number;

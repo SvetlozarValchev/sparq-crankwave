@@ -24,6 +24,9 @@ export interface LiveEngineBenchSnapshot {
   readonly rpm: number;
   readonly torqueNm: number | null;
   readonly powerKw: number | null;
+  readonly vehicleSpeedKmh: number;
+  readonly forwardGears: readonly { readonly ordinal: number; readonly id: string; readonly ratio: number }[];
+  readonly serviceBrakeAvailable: boolean;
   readonly physicsRateHz: number;
   readonly sourceRateHz: number;
   readonly deviceRateHz: number | null;
@@ -37,6 +40,9 @@ export interface LiveEngineBenchSnapshot {
 
 const INITIAL_CONTROLS: LiveEngineControls = Object.freeze({
   throttle: 0.1,
+  selectedGearOrdinal: 0,
+  clutchEngagement: 0,
+  serviceBrake: 1,
   ignition: true,
   fuel: true,
   limiter: true,
@@ -51,6 +57,9 @@ function initialSnapshot(): LiveEngineBenchSnapshot {
     rpm: 0,
     torqueNm: null,
     powerKw: null,
+    vehicleSpeedKmh: 0,
+    forwardGears: Object.freeze([]),
+    serviceBrakeAvailable: false,
     physicsRateHz: LIVE_PHYSICS_RATE_HZ,
     sourceRateHz: LIVE_SOURCE_RATE_HZ,
     deviceRateHz: null,
@@ -107,6 +116,15 @@ export class LiveEngineBenchController {
 
     try {
       const liveProgram = createLiveEngineProgram(source);
+      const controls: LiveEngineControls = Object.freeze({
+        ...this.snapshot.controls,
+        serviceBrake: liveProgram.serviceBrakeAvailable ? this.snapshot.controls.serviceBrake : 0,
+      });
+      this.replace({
+        ...this.snapshot,
+        controls,
+        serviceBrakeAvailable: liveProgram.serviceBrakeAvailable,
+      });
       const [wasm, ...resourceBytes] = await Promise.all([
         fs.readFileBuffer(WASM_PATH),
         ...liveProgram.assets.map((asset) => fs.readFileBuffer(asset.packagePath)),
@@ -162,6 +180,9 @@ export class LiveEngineBenchController {
       ...this.snapshot.controls,
       ...update,
       throttle: Math.min(1, Math.max(0, update.throttle ?? this.snapshot.controls.throttle)),
+      selectedGearOrdinal: Math.max(0, Math.round(update.selectedGearOrdinal ?? this.snapshot.controls.selectedGearOrdinal)),
+      clutchEngagement: Math.min(1, Math.max(0, update.clutchEngagement ?? this.snapshot.controls.clutchEngagement)),
+      serviceBrake: Math.min(1, Math.max(0, update.serviceBrake ?? this.snapshot.controls.serviceBrake)),
     });
     this.replace({ ...this.snapshot, controls });
     this.worker?.postMessage({ type: 'controls', ...controls } satisfies LiveWorkerInboundMessage);
@@ -200,6 +221,7 @@ export class LiveEngineBenchController {
           physicsRateHz: message.physicsRateHz,
           sourceRateHz: message.deliveryRateHz,
           deviceRateHz: message.outputSampleRate,
+          forwardGears: Object.freeze(message.forwardGears),
         });
         this.sendControls();
         this.pump(generation);
@@ -235,6 +257,12 @@ export class LiveEngineBenchController {
           rpm: Math.max(0, message.rpm),
           torqueNm: message.torqueNm,
           powerKw: message.powerKw,
+          vehicleSpeedKmh: message.vehicleSpeedKmh,
+          controls: Object.freeze({
+            ...this.snapshot.controls,
+            selectedGearOrdinal: message.selectedGearOrdinal,
+            clutchEngagement: message.clutchEngagement,
+          }),
           limiterCut: message.limiterCut,
           renderMs: message.renderMs / message.processedBlocks,
           realtimeFactor: message.realtimeFactor,
